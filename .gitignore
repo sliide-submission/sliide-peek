@@ -1,0 +1,31 @@
+# AI Agent profiles (local auth, never commit)
+.envrc
+.agent-profile/
+.claude/settings.local.json
+
+# macOS
+.DS_Store
+
+# Gradle / Kotlin
+.gradle/
+.kotlin/
+build/
+**/build/
+!src/**/build/
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Xcode
+xcuserdata/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
