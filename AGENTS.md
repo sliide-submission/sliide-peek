@@ -15,6 +15,17 @@ Before making changes, review the relevant skill:
 
 ## Project Direction
 
+The official Sliide KMP "UX Innovator" challenge supersedes the earlier speculative app scope. From roadmap item 12.4 onward, prioritise:
+
+- smart user feed from `/users`
+- relative timestamp in shared logic
+- add user flow
+- delete with confirmation and Undo
+- offline caching
+- Koin-based DI where practical
+- high-fidelity Material 3 polish
+- AI usage documentation
+
 Keep the app:
 
 - simple

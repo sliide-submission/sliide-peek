@@ -2,17 +2,23 @@
 
 ## 1. Overview
 
-Build a simple **User Activity Manager** application using **Kotlin Multiplatform** and **Compose Multiplatform**.
+Build a high-fidelity **User Management System** using **Kotlin Multiplatform** and **Compose Multiplatform**.
 
-The app will use the public GoREST API as its backend:
+The app will primarily use the public GoREST API as its backend:
 
 ```text
 https://gorest.co.in/public/v2
 ```
 
-The purpose of the app is to demonstrate API integration, user-based interactions, loading/error handling, clean UI structure, dark mode support, and polished animations such as shimmer loading states.
+If GoREST is unavailable, the official challenge allows using an alternative such as:
 
-This document is a provisional specification intended to provide foundation work until the final company-provided specification is available.
+```text
+https://dummyjson.com/docs/users
+```
+
+The purpose of the app is to demonstrate AI-assisted development, clean KMP architecture, shared Compose UI, UX polish, offline-capable user management, loading/error handling, dark mode, adaptive layouts, shimmer states, and high-quality implementation within a short timeframe.
+
+This document has been updated to reflect the official Sliide KMP "UX Innovator" challenge. The official challenge supersedes earlier speculative requirements.
 
 ---
 
@@ -25,8 +31,10 @@ The application should be built using:
 - Kotlin coroutines
 - Ktor Client for networking
 - kotlinx.serialization for JSON parsing
-- MVVM or similar presentation architecture
-- Material Design / Compose Material theming
+- SQLDelight or Room KMP for local caching/offline support
+- Koin for dependency injection, preferred by the official challenge
+- MVVM or MVI presentation architecture
+- Material 3 / Compose Material theming
 
 Target platforms:
 
@@ -49,13 +57,18 @@ Base URL:
 https://gorest.co.in/public/v2
 ```
 
-Main resources:
+Primary resource:
 
 ```text
 /users
-/posts
-/comments
-/todos
+```
+
+Core endpoints:
+
+```http
+GET /users
+POST /users
+DELETE /users/{id}
 ```
 
 Authenticated write operations require:
@@ -64,15 +77,17 @@ Authenticated write operations require:
 Authorization: Bearer <token>
 ```
 
-The app should be structured so that read-only API calls work without authentication, while create/update/delete actions can be enabled once an API token is provided.
+The app should be structured so read-only operations can function without authentication, while create/delete actions use a securely supplied bearer token or a clearly documented challenge/demo strategy.
+
+Previous exploratory resources such as `/posts`, `/comments`, and `/todos` are no longer core requirements. They may remain in lower-level data code if already implemented, but they should not drive the primary UX unless time allows as optional extras.
 
 ---
 
 ## 4. Functional Requirements
 
-## 4.1 User List
+## 4.1 Smart User Feed
 
-The app shall display a list of users from the API.
+The app shall fetch and display users from the **last page** of the `/users` endpoint.
 
 Endpoint:
 
@@ -80,128 +95,32 @@ Endpoint:
 GET /users
 ```
 
-Each user row should display:
+The implementation should use GoREST pagination metadata to discover or request the last page.
+
+Each user row must display:
 
 - Name
 - Email
-- Gender
-- Status: active/inactive
+- Relative timestamp, for example `5 minutes ago`
 
-The user list should support:
+The relative timestamp must be calculated in shared KMP logic.
 
-- Loading state
-- Error state
-- Empty state
-- Pull-to-refresh or manual refresh
-- Pagination or “load more” behaviour
-- Local filtering by active/inactive status, if time allows
+Important note: GoREST user records may not include a server-created timestamp. If no suitable API timestamp exists, the app should use a clearly documented local timestamp strategy, such as `fetchedAt`, `cachedAt`, or `createdLocallyAt`, and calculate the relative display from that shared model.
 
----
+The user feed must support:
 
-## 4.2 User Detail
-
-When a user is selected, the app shall display a user detail screen.
-
-Suggested endpoints:
-
-```http
-GET /users/{id}
-GET /users/{id}/posts
-GET /users/{id}/todos
-```
-
-The detail screen should display:
-
-- Name
-- Email
-- Gender
-- Status
-- User posts
-- User todos
-
-The posts and todos sections may be displayed as separate sections, tabs, or navigable child screens.
+- Shimmer loading state
+- Graceful error state
+- No-internet/offline state
+- Empty state where applicable
+- Pull-to-refresh or explicit refresh where practical
+- Offline display from local cache
 
 ---
 
-## 4.3 Posts
+## 4.2 Adaptive Add User Flow
 
-The app shall allow the user to browse posts associated with a selected user.
-
-Suggested endpoint:
-
-```http
-GET /users/{id}/posts
-```
-
-Each post should display:
-
-- Title
-- Body preview
-
-Selecting a post should open a post detail screen.
-
-Suggested endpoints:
-
-```http
-GET /posts/{id}
-GET /posts/{id}/comments
-```
-
----
-
-## 4.4 Comments
-
-The app shall display comments for a selected post.
-
-Suggested endpoint:
-
-```http
-GET /posts/{post_id}/comments
-```
-
-Each comment should display:
-
-- Commenter name
-- Email
-- Comment body
-
-Optional authenticated feature:
-
-```http
-POST /posts/{post_id}/comments
-```
-
----
-
-## 4.5 Todos
-
-The app shall display todos associated with a selected user.
-
-Suggested endpoint:
-
-```http
-GET /users/{user_id}/todos
-```
-
-Each todo should display:
-
-- Title
-- Due date
-- Status
-
-Optional authenticated actions:
-
-```http
-POST /users/{user_id}/todos
-PATCH /todos/{id}
-DELETE /todos/{id}
-```
-
----
-
-## 4.6 Create User
-
-If an API token is available, the app shall allow creating a user.
+The app shall provide a polished add-user flow launched from a floating action button.
 
 Endpoint:
 
@@ -219,36 +138,29 @@ Form fields:
 Validation rules:
 
 - Name is required
-- Email is required and must be valid
+- Name should be validated in real time
+- Email is required
+- Email must be validated in real time
 - Gender must be `male` or `female`
 - Status must be `active` or `inactive`
 
----
+On successful creation (`201`):
 
-## 4.7 Edit User
+- the new user must appear immediately at the top of the list
+- the UI should provide clear success feedback
+- local cache/state should be updated so the app remains coherent offline
 
-If an API token is available, the app shall allow editing an existing user.
+Authentication note:
 
-Endpoint:
-
-```http
-PATCH /users/{id}
-```
-
-Editable fields:
-
-- Name
-- Email
-- Gender
-- Status
-
-The app should show success and error feedback after attempting to update a user.
+- GoREST write operations require a bearer token.
+- The implementation must handle the token safely and must not commit secrets.
+- If token access is unavailable, the limitation and fallback/demo behaviour must be documented clearly.
 
 ---
 
-## 4.8 Delete User
+## 4.3 Destructive Delete with Undo
 
-If an API token is available, the app shall allow deleting a user.
+The app shall support deleting users with a premium-feeling undo interaction.
 
 Endpoint:
 
@@ -256,9 +168,43 @@ Endpoint:
 DELETE /users/{id}
 ```
 
-The app must show a confirmation dialog before deletion.
+Required behaviour:
 
-After successful deletion, the app should return to the user list and refresh the data.
+- Long-press a user to start deletion.
+- Show a delete confirmation before calling the API.
+- On successful deletion (`204`), animate the item disappearing from the list.
+- Show a Snackbar with an **Undo** action.
+- Undo restores the local UI/cache state before the action is finalized.
+
+The exact remote undo semantics should be handled carefully because a completed API delete cannot necessarily be reversed on the server. At minimum, Undo must restore the local state in a coherent and clearly documented way. If the server item cannot be restored, document the trade-off.
+
+---
+
+## 4.4 Offline Support
+
+The app shall work offline using local caching.
+
+Requirements:
+
+- Cache fetched users locally using SQLDelight or Room KMP.
+- Show cached users when the network is unavailable.
+- Show a clear no-internet/offline UI state.
+- Keep cache updates coherent after successful add/delete actions.
+- Avoid blocking the UI thread for persistence work.
+
+---
+
+## 4.5 Optional/Reduced Scope Features
+
+The earlier exploratory scope included user posts, comments, todos, user detail, and edit-user flows. These are no longer core official-challenge requirements.
+
+Optional only if time allows:
+
+- User detail view
+- Edit user
+- Posts/comments/todos browsing
+- Search/filtering
+- Theme selector
 
 ---
 
@@ -360,28 +306,28 @@ Expected tablet behaviour:
 
 Example layouts:
 
-- User list on the left, selected user detail on the right.
-- User detail as the parent view, with posts/todos/comments shown as sibling or child panels.
-- Post list as a secondary panel, with selected post comments/details in a child panel where space allows.
+- User feed on the left, selected/active user management panel on the right.
+- User feed on the left, add-user form or delete confirmation/undo state on the right.
+- Two-column/grid treatment for user cards on wide screens where it feels better than master-detail.
 
-This can be thought of as similar to UIKit-style master view controllers with sibling or child detail view controllers, implemented using Compose Multiplatform adaptive layout patterns.
+This can be thought of as similar to UIKit-style master-detail navigation, implemented using Compose Multiplatform adaptive layout patterns.
 
-On compact screens such as phones, the app may use normal stacked navigation:
+On compact screens such as phones, the app may use normal stacked or modal navigation:
 
 ```text
-User List -> User Detail -> Posts -> Post Detail -> Comments
+User Feed -> Add User Form / Delete Confirmation
 ```
 
 On tablet/iPad-sized screens, the app should prefer adaptive navigation:
 
 ```text
-Master List | Detail Content
+User Feed | Detail/Form/Action Panel
 ```
 
 or, where practical:
 
 ```text
-Master List | Secondary Content | Detail Content
+Two-column User Feed + Contextual Action Surface
 ```
 
 ---
@@ -463,25 +409,31 @@ Suggested structure:
 shared/
   data/
     remote/
+    local/
     repository/
-    model/
   domain/
+    model/
+    repository/
+    usecase/
   presentation/
     users/
-    posts/
-    todos/
+    adduser/
   ui/
     components/
     theme/
+    navigation/
 ```
 
 Suggested layers:
 
 - API service/client
+- Local cache/persistence
 - DTO models
-- Repository
+- Domain models
+- Repository/use case layer
 - ViewModel or state holder
 - Compose screens
+- DI wiring via Koin or a clearly justified lightweight alternative
 
 Example UI state:
 
@@ -499,19 +451,20 @@ data class UsersUiState(
 
 Minimum implementation:
 
-1. User List Screen
-2. User Detail Screen
-3. User Posts Screen
-4. Post Detail / Comments Screen
-5. User Todos Screen
-6. Adaptive Tablet/iPad Master-Detail Layout
+1. Smart User Feed Screen
+2. Add User Form / Modal / Panel
+3. Delete Confirmation
+4. Snackbar Undo flow
+5. Offline / No Internet State
+6. Adaptive Tablet/iPad Layout
 
 Optional screens:
 
-6. Create User Screen
-7. Edit User Screen
-8. Settings / API Token Screen
-9. Theme Settings Screen
+7. User Detail Screen
+8. Edit User Screen
+9. Settings / API Token Screen, if needed for safe local token entry
+10. Theme Settings Screen
+11. Posts/comments/todos screens, only if time allows
 
 ---
 
@@ -683,17 +636,18 @@ pi --name "tests-and-polish"
 
 ## 10. Nice-To-Have Features
 
-If time allows, consider adding:
+If time allows after the official core requirements are complete, consider adding:
 
 - Local user search
 - Filter users by active/inactive
-- Offline cache using SQLDelight
-- Retry button on failed requests
+- User detail view
+- Edit user flow
 - API token entry/settings screen
-- Pull-to-refresh
-- Unit tests for repositories and view models
+- Pull-to-refresh polish
+- Additional ViewModel edge-case tests
 - Mock API layer for previews/testing
 - Compose previews for light and dark themes
+- Posts/comments/todos browsing as a non-core extra
 
 ---
 
@@ -704,9 +658,11 @@ A review of the existing `sainsburys-app-kmp` repository identified several prod
 Useful practices to adopt:
 
 - **Ktor + kotlinx.serialization** for networking.
-- **Internal DTOs** with `DTO` suffix, for example `UserDTO`, `PostDTO`, `TodoDTO`.
+- **SQLDelight or Room KMP** for offline caching.
+- **Koin** for dependency injection, unless a simpler approach is explicitly justified.
+- **Internal DTOs** with `DTO` suffix, for example `UserDTO`.
 - **Mapper functions** named `toDomain()` in `Mapper.kt` files.
-- **Domain models separated from API DTOs**.
+- **Domain models separated from API DTOs and local database entities**.
 - **Stateless composables** that receive state and callbacks.
 - **ViewModel state as immutable `data class State` exposed via `StateFlow`**.
 - **One-shot UI events as `sealed interface Event` exposed via `Flow` or `Channel`**.
@@ -724,8 +680,8 @@ Practices to adapt carefully or avoid for this smaller app:
 - The Sainsbury's project is an SDK-style production codebase; this app is a small demo application, so it does not need the same level of hyper-modularisation.
 - Binary compatibility validation is not required unless the app starts publishing libraries.
 - A full SDK/public API separation is unnecessary.
-- Complex kotlin-inject wiring may be overkill; a simpler DI approach or manual dependency creation is acceptable unless the final spec asks otherwise.
-- SQLDelight should be treated as optional. It is useful for offline caching, but not required for the first version.
+- Full production-SDK DI complexity is still overkill, but the official challenge prefers Koin, so use a small Koin setup rather than a large custom framework.
+- SQLDelight/Room KMP is now part of the official offline requirement, so local caching should no longer be treated as optional.
 - The Sainsbury's “do not create docs” convention does not apply here, because this assignment explicitly benefits from README and AI-session documentation.
 - Sainsbury's internal design-system components should not be copied; instead, create a lightweight app-specific theme/components layer.
 
@@ -738,6 +694,8 @@ shared/
       dto/
       mapper/
       GorestApiClient.kt
+    local/
+      UserCacheDataSource.kt
     repository/
   domain/
     model/
@@ -745,8 +703,7 @@ shared/
     usecase/
   presentation/
     users/
-    posts/
-    todos/
+    adduser/
   ui/
     components/
     theme/
@@ -757,28 +714,29 @@ Recommended naming style:
 
 ```text
 UserDTO
-PostDTO
-CommentDTO
-TodoDTO
+UserEntity
 KtorGorestRemoteDataSource
+UserCacheDataSource
 UserRepository
-GetUsersUseCase
-UserListViewModel
-UserListViewModel.State
-UserListViewModel.Event
+GetLastPageUsersUseCase
+CreateUserUseCase
+DeleteUserUseCase
+UserFeedViewModel
+UserFeedViewModel.State
+UserFeedViewModel.Event
 ```
 
 ---
 
 ## 12. Suggested Development Roadmap
 
-The items below are intended as roadmap themes rather than a rigid implementation plan. Each roadmap item should be planned separately using the local `implementation-plan` skill before coding begins.
+The items below are roadmap themes rather than rigid implementation instructions. Each roadmap item should be planned separately using the local `implementation-plan` skill before coding begins.
 
-The planning agent should be free to adjust file structure, ordering, and implementation details as long as the final result remains simple, clean, and aligned with the requirements.
+Roadmap items 12.1-12.3 were started before the official challenge arrived and remain broadly useful. Roadmap item 12.4 onward should follow the official Sliide KMP "UX Innovator" challenge as the source of truth.
 
 ---
 
-## 12.1 Project Foundation
+## 12.1 Project Foundation — Completed/Retained
 
 Goal: create a minimal Kotlin Multiplatform Compose application foundation.
 
@@ -791,7 +749,7 @@ Likely scope:
 - minimal package structure
 - initial README
 
-Suggested plan file:
+Plan file:
 
 ```text
 .plans/project-foundation.md
@@ -799,31 +757,33 @@ Suggested plan file:
 
 ---
 
-## 12.2 Theme, Navigation, and App Shell
+## 12.2 Theme, Navigation, and App Shell — Completed/Retained
 
-Goal: establish the basic user experience framework before feature screens are built.
+Goal: establish the structural user experience framework before feature screens are built.
 
 Likely scope:
 
-- light/dark theme
+- light/dark theme foundation
 - basic navigation model
 - phone-safe layout shell
 - iPad/tablet adaptive layout strategy
 - reusable loading/error/empty containers
 
-Suggested plan file:
+Plan file:
 
 ```text
 .plans/theme-navigation-shell.md
 ```
 
+Note: existing 12.2 work may need light adaptation to the official focus on user feed/add/delete rather than posts/comments/todos.
+
 ---
 
-## 12.3 GoREST API and Domain Layer
+## 12.3 GoREST API and Domain Layer — Completed/Retained
 
-Goal: create a small, testable data layer for users, posts, comments, and todos.
+Goal: create a small, testable data layer for GoREST.
 
-Likely scope:
+Likely retained scope:
 
 - Ktor client
 - kotlinx.serialization DTOs
@@ -831,109 +791,147 @@ Likely scope:
 - `toDomain()` mappers
 - repositories or data sources
 - basic error handling
-- fixture-based mapper/API tests where practical
+- fixture-based mapper/API tests
 
-Suggested plan file:
+Plan file:
 
 ```text
 .plans/gorest-api-domain.md
 ```
 
+Note: if posts/comments/todos support exists from early planning, it should be treated as non-core. New planning should prioritise `/users`, create-user, delete-user, offline caching, and shared user-feed logic.
+
 ---
 
-## 12.4 User List and User Detail Experience
+## 12.4 Official Smart User Feed
 
-Goal: implement the primary user browsing experience.
+Goal: implement the official primary user feed experience.
 
 Likely scope:
 
-- user list screen
-- user detail screen
-- loading shimmer
-- refresh/retry behaviour
-- empty/error states
+- fetch users from the last page of `/users`
+- display name, email, and shared-logic relative timestamp
 - ViewModel/state holder integration
+- shimmer loading
+- no-internet/offline state
+- refresh/retry behaviour
+- local cached feed display if persistence is already available, or a clear seam if persistence is planned next
+- unit tests for shared feed logic and ViewModel state
 
 Suggested plan file:
 
 ```text
-.plans/user-list-detail.md
+.plans/smart-user-feed.md
 ```
 
 ---
 
-## 12.5 Posts, Comments, and Todos
+## 12.5 Offline Cache and Dependency Injection
 
-Goal: add the supporting user activity views.
+Goal: meet the official offline and DI requirements.
 
 Likely scope:
 
-- user posts section/list
-- post detail
-- comments list
-- user todos section/list
-- status chips and lightweight content animations
+- SQLDelight or Room KMP local user cache
+- cached last-page feed storage
+- cached add/delete state updates
+- Koin setup for API client, repositories, cache, and ViewModels/state holders
+- offline-first repository behaviour where practical
+- tests for cache/repository behaviour
 
 Suggested plan file:
 
 ```text
-.plans/activity-posts-comments-todos.md
+.plans/offline-cache-koin.md
 ```
 
 ---
 
-## 12.6 iPad / Tablet Adaptive Layout
+## 12.6 Adaptive Add User Flow
 
-Goal: ensure the app behaves well on iPad/tablet rather than stretching phone screens.
+Goal: implement the official polished add-user flow.
 
 Likely scope:
 
-- master-detail layout
-- selected item highlighting
-- split-view behaviour
-- portrait/landscape handling
-- phone/tablet layout switching
+- FAB entry point
+- adaptive form presentation for phone/tablet
+- real-time name validation
+- real-time email validation
+- gender/status inputs
+- authenticated `POST /users` path or documented challenge fallback
+- immediate insertion at the top of the feed after `201`
+- local cache/state update
+- success/error feedback
+- ViewModel/form validation tests
 
 Suggested plan file:
 
 ```text
-.plans/ipad-tablet-layout.md
+.plans/add-user-flow.md
 ```
 
 ---
 
-## 12.7 Polish, Animation, and Accessibility Pass
+## 12.7 Delete with Confirmation and Undo
 
-Goal: make the app feel finished without adding unnecessary complexity.
+Goal: implement the official destructive action flow with premium-feeling local undo.
 
 Likely scope:
 
-- shimmer polish
-- subtle transitions
+- long-press user gesture
+- delete confirmation
+- authenticated `DELETE /users/{id}` path or documented challenge fallback
+- animated item removal after `204`
+- Snackbar Undo
+- local state/cache restoration when Undo is selected
+- clear documentation of remote-vs-local undo semantics
+- ViewModel/state tests for delete/undo edge cases
+
+Suggested plan file:
+
+```text
+.plans/delete-user-undo.md
+```
+
+---
+
+## 12.8 High-Fidelity UX Polish, Animation, and Accessibility
+
+Goal: make the app feel production-ready and "expensive" as required by the official challenge.
+
+Likely scope:
+
+- apply high-fidelity design system/prototype
+- Material 3 polish
 - dark mode review
-- spacing/typography pass
+- shimmer polish
+- add/delete animations
+- adaptive layout polish for portrait/landscape/tablet
 - accessibility labels/content descriptions where appropriate
 - touch target review
+- no-internet and validation-state polish
 
 Suggested plan file:
 
 ```text
-.plans/polish-animation-accessibility.md
+.plans/high-fidelity-polish.md
 ```
 
 ---
 
-## 12.8 AI Usage Documentation and Submission Readiness
+## 12.9 AI Usage Documentation and Submission Readiness
 
 Goal: document the AI-assisted development process clearly for reviewers.
 
 Likely scope:
 
+- root `README.md` architectural choices section
 - root `README.md` AI usage section
 - `docs/ai/README.md` development log
 - exported/rendered Pi sessions where appropriate
 - raw transcript preservation with secret review/redaction
 - final verification notes
+- public GitHub/ZIP submission readiness
 
 Suggested plan file:
 
@@ -943,17 +941,18 @@ Suggested plan file:
 
 ---
 
-## 12.9 Optional Enhancements
+## 12.10 Optional Enhancements
 
-These should only be planned after the core roadmap is stable or if the final company specification requires them.
+These should only be planned after the official core requirements are stable.
 
 Possible optional plans:
 
-- create/edit/delete user flows
-- API token/settings screen
+- user detail view
+- edit user flow
 - local search/filtering
-- offline cache
+- API token/settings screen
 - additional tests
 - theme selector
+- posts/comments/todos browsing as non-core extra
 
-This roadmap should provide useful groundwork while remaining flexible enough to adapt to the final PDF specification.
+This roadmap should provide useful groundwork while prioritising the official challenge requirements.

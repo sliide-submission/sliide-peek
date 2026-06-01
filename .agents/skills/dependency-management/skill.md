@@ -41,11 +41,14 @@ Likely useful dependencies:
 - kotlinx.datetime, if dates need formatting/parsing
 - A lightweight KMP ViewModel/lifecycle solution, if needed
 
+Official challenge dependencies now likely required:
+
+- SQLDelight or Room KMP for offline caching
+- Koin for dependency injection
+
 Optional dependencies:
 
-- SQLDelight, only if offline caching is added
 - Image loading library, only if the final UI needs remote images
-- DI library, only if manual dependency creation becomes messy
 
 ## Dependency Access Style
 
@@ -73,14 +76,14 @@ For a small app, excessive `api` usage is usually a smell.
 
 ## Avoid Unless Required
 
-Do not add these unless the final spec clearly needs them:
+Do not add these unless the official spec or a plan clearly needs them:
 
 - Retrofit
-- Room
 - Dagger/Hilt
 - Large navigation frameworks
 - Analytics SDKs
-- Full offline database stack
+
+Note: an offline database stack is now expected by the official challenge. Prefer SQLDelight or Room KMP, and keep the setup as small as practical.
 
 ## Checklist
 
@@ -109,7 +112,8 @@ Avoid:
 - adding libraries by habit
 - hardcoding dependency strings and versions
 - using `api` by default
-- adding DI/database/navigation frameworks before they are needed
+- adding navigation frameworks before they are needed
+- overbuilding Koin or persistence beyond the official offline requirement
 
 ## Key Rules
 

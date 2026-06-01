@@ -1,281 +1,302 @@
-# Designer Brief: User Activity Manager Mobile App
+# Designer Brief: Sliide KMP UX Innovator Challenge
 
 ## Project Overview
 
-Design a clean, modern mobile/tablet application called **User Activity Manager**.
+Design a high-fidelity, polished **User Management System** for the Sliide KMP "UX Innovator" challenge.
 
-The app uses a public REST API to display users and their related activity, including posts, comments, and todos. The application is intended as a small but polished coding-task app, so the design should feel production-quality while remaining simple and easy to implement.
-
-The app will be built using **Kotlin Multiplatform Compose** and should support:
+The app will be built with **Kotlin Multiplatform** and **100% shared Compose Multiplatform UI** for:
 
 - Android phones
 - iPhone
 - iPad/tablet layouts
-- Light mode
-- Dark mode
+
+The official challenge emphasises that AI will be used to accelerate development, so the design should help the implementation team focus on architecture, UX polish, and quality rather than broad feature sprawl.
 
 ---
 
 ## Product Goal
 
-Allow users to browse a list of people, open a person’s profile, and view their related activity in a clear and pleasant way.
+Create a premium-feeling user directory app that allows someone to:
 
-The app should demonstrate:
+1. Browse a smart feed of users.
+2. Add a new user through a polished form.
+3. Delete a user with confirmation and Undo.
+4. Continue using the app gracefully when offline.
 
-- good mobile UX
-- clean information hierarchy
-- elegant loading states
-- responsive/adaptive layouts
-- light and dark theme polish
-- simple user-based interactions
+The app should feel modern, responsive, and "expensive" despite being a focused coding challenge.
 
 ---
 
-## Core User Flow
+## Official Core Features To Design
 
-### 1. User List
+## 1. Smart User Feed
 
-The user lands on a list of users.
+The main screen is a user feed sourced from the GoREST `/users` API.
 
-Each user card/row should show:
+Each user row/card must show:
 
-- name
-- email
-- active/inactive status
-- gender, if useful visually
+- Name
+- Email
+- Relative timestamp, e.g. `5 minutes ago`
 
-Actions:
+The timestamp is calculated in shared app logic. Since the API may not provide a real creation timestamp, the UI should work for a local timestamp concept such as `fetched just now`, `cached 5 minutes ago`, or `created 2 minutes ago`.
 
-- tap a user to open detail
-- refresh list
-- optionally filter by active/inactive
+Feed states to design:
 
-States to design:
-
-- loading shimmer
-- populated list
-- empty state
-- error state
+- Initial loading with shimmer
+- Populated feed
+- Pull-to-refresh or explicit refresh
+- Empty state
+- Error state
+- No Internet / Offline state
+- Cached/offline feed state
 
 ---
 
-### 2. User Detail
+## 2. Add User Flow
 
-The user detail screen should show:
+The app must include a floating action button or similarly prominent add action.
 
-- name
-- email
-- status
-- gender
-- related posts
-- related todos
+The add flow should include a polished form with:
 
-Possible layout:
+- Name field
+- Email field
+- Gender input
+- Status input
+- Submit action
+- Cancel/dismiss action
 
-- profile/header section at top
-- segmented tabs or sections for:
-  - Posts
-  - Todos
+Validation states:
 
-Actions:
+- Empty name
+- Invalid name
+- Empty email
+- Invalid email
+- Valid form
+- Submit loading
+- Submit error
+- Submit success
 
-- back to user list on phone
-- select post
-- view todos
+UX requirement:
 
----
+- Validation should feel real-time and helpful.
+- Error copy should be clear and human.
+- After successful creation, the user appears immediately at the top of the feed.
 
-### 3. Posts
+Adaptive presentation ideas:
 
-Posts can be shown either inside user detail or as a child screen.
-
-Each post preview should show:
-
-- title
-- short body preview
-
-Tapping a post opens post detail.
+- Phone: modal sheet or pushed form screen.
+- Tablet/iPad: right-side panel, dialog, or split-view detail panel.
 
 ---
 
-### 4. Post Detail and Comments
+## 3. Delete with Confirmation and Undo
 
-Post detail should show:
+The app must support deleting users.
 
-- title
-- full body
-- comments list
+Flow:
 
-Each comment should show:
+1. Long-press a user.
+2. Show delete confirmation.
+3. Confirm delete.
+4. User item disappears with animation.
+5. Snackbar appears with Undo action.
+6. Undo restores the item locally.
 
-- commenter name
-- email
-- comment body
+Design states:
 
-States:
+- Long-press affordance or contextual hint
+- Delete confirmation dialog/sheet
+- Destructive action styling
+- Removal animation direction/feel
+- Snackbar with Undo
+- Restored item feedback, if useful
+- Delete failure state
 
-- comments loading shimmer
-- no comments
-- error loading comments
+Important UX note:
 
----
-
-### 5. Todos
-
-Todos should show:
-
-- title
-- due date
-- status
-
-Todo status should be visually clear, for example:
-
-- completed chip
-- pending chip
-- subtle icon or colour treatment
+- Undo is primarily a local-state restore interaction. If the remote API cannot actually restore the deleted server record, the UI should still feel coherent and the implementation should document the behaviour.
 
 ---
 
-## iPad / Tablet UX Requirement
+## 4. Offline Support
 
-The app must not simply stretch the phone layout on iPad/tablet.
+The official challenge requires the app to work offline using local caching.
 
-Use an adaptive master-detail style layout.
+Design should include:
 
-Recommended iPad layout:
+- Cached feed display when offline
+- No Internet state when no cache exists
+- Offline banner/chip/indicator where appropriate
+- Retry action
+- Last updated / relative cached time where useful
+- Clear but non-alarming offline messaging
+
+Offline should feel graceful, not like a crash state.
+
+---
+
+## Adaptive Layout Requirements
+
+The app must adapt between:
+
+- Portrait phone: single-column feed
+- Landscape/tablet/iPad: master-detail or two-column layout
+
+Possible tablet layouts:
 
 ```text
-User List | User Detail
+User Feed | Add/Edit/Delete Action Panel
 ```
 
-If space allows, a deeper layout could be:
+or:
 
 ```text
-User List | User Detail / Posts | Post Detail / Comments
+Two-column User Feed
 ```
 
-Tablet behaviour:
+or:
 
-- selecting a user updates the detail panel instead of pushing a full-screen page
-- selected item should be visually highlighted
-- navigation should feel efficient in landscape
-- portrait should still work gracefully
-- keep readable line lengths and comfortable spacing
+```text
+User Feed | Selected User / Contextual Actions
+```
+
+Design priorities:
+
+- Do not simply stretch the phone UI.
+- Keep touch targets comfortable.
+- Preserve readable line lengths.
+- Make add/delete flows feel natural on larger screens.
+- Support portrait and landscape.
 
 ---
 
 ## Visual Style Direction
 
-The desired feel is:
+The official evaluation asks whether the app feels "expensive".
 
-- clean
-- minimalist
-- calm
+Target feel:
+
+- polished
 - modern
-- professional
-- not enterprise-heavy
-- not overly playful
+- premium
+- calm
+- focused
+- high-fidelity
+- Material 3 influenced
+- not cluttered
 
-Suggested visual language:
+Suggested design language:
 
-- soft cards
-- rounded corners
-- clear spacing
-- readable typography
-- subtle dividers
-- restrained accent colour
-- small status chips
-- simple icons where useful
+- refined cards or list rows
+- subtle elevation/surfaces
+- well-considered typography
+- high-quality spacing
+- expressive but restrained accent colour
+- polished chips/badges
+- refined text-field states
+- tasteful motion guidance
 
 Avoid:
 
-- dense dashboard UI
-- excessive gradients
-- too many colours
-- complex illustrations
-- overly bespoke components that are hard to implement
+- generic scaffold-only UI
+- dense admin dashboard feel
+- excessive colours
+- toy-like visual treatment
+- overcomplicated navigation
+- features outside the official scope taking visual priority
 
 ---
 
 ## Light and Dark Mode
 
-Design both light and dark themes.
+Design both light and dark modes.
 
 Requirements:
 
-- both themes should feel intentional
-- status colours must be accessible in both modes
-- cards and surfaces should have clear contrast
-- shimmer loading should work in both modes
-- error states should not be harsh or visually jarring
+- Both themes should feel intentional.
+- Dark mode should not be a simple inversion.
+- Shimmer should look good in both themes.
+- Offline/error/destructive states should be accessible.
+- Validation states must be readable and not overly harsh.
 
 ---
 
-## Loading and Animation UX
+## Motion and Loading UX
 
-The app should include subtle, polished loading and motion.
+Design guidance is needed for:
 
-Design for:
+- shimmer loading rows/cards
+- add form opening/closing
+- validation feedback
+- item deletion animation
+- Snackbar entrance/exit
+- Undo restore animation
+- screen/panel transitions for adaptive layouts
 
-- shimmer/skeleton list rows
-- smooth transition from loading to content
-- subtle screen transitions
-- animated empty/error state appearance
-- no jarring layout jumps
-
-Shimmer placeholders should roughly match the final content layout so the UI feels stable.
+Motion should feel premium but not slow.
 
 ---
 
-## Primary Screens to Design
+## Primary Screens / States To Design
 
-Minimum required screens/states:
+Minimum requested design coverage:
 
-1. User list — loading
-2. User list — populated
-3. User list — error
-4. User detail — phone
-5. User detail — iPad split view
-6. Posts section/list
-7. Post detail with comments
-8. Todos section/list
-9. Empty state
-10. Dark mode examples
+1. User feed — loading shimmer
+2. User feed — populated
+3. User feed — offline with cached users
+4. User feed — no internet and no cache
+5. User feed — API error with retry
+6. Add user form — empty
+7. Add user form — validation errors
+8. Add user form — submit loading
+9. Add user success state / inserted-at-top behaviour
+10. Delete confirmation
+11. Delete animation + Undo Snackbar
+12. Tablet/iPad adaptive layout
+13. Light mode
+14. Dark mode
 
-Optional screens:
+Optional if time allows:
 
-11. Create/edit user form
-12. API token/settings screen
-13. Filter/search state
+15. API token/settings treatment, if needed for authenticated GoREST writes
+16. User detail view
+17. Edit user flow
+18. Search/filtering
 
 ---
 
 ## Key Components
 
-Useful reusable components:
+Reusable components likely needed:
 
 - user row/card
-- status chip
-- todo row/card
-- post preview card
-- comment card
-- shimmer placeholder card
+- relative timestamp label
+- offline banner/chip
+- shimmer user row/card
 - empty state block
+- no-internet state block
 - error/retry block
-- adaptive split-view container
+- floating action button
+- add-user form fields
+- validation messages
+- gender/status selectors
+- destructive confirmation dialog/sheet
+- Snackbar with Undo
+- adaptive feed/action panel container
 
 ---
 
 ## Deliverables Requested
 
-Ideally provide:
+Please provide:
 
-- phone flow wireframes
-- iPad/tablet adaptive layout wireframes
-- light theme visual design
-- dark theme visual design
-- loading shimmer examples
-- key component states
-- simple clickable prototype if time allows
+- UX flow for the official core features
+- high-fidelity phone designs
+- high-fidelity iPad/tablet designs
+- light and dark theme examples
+- component states for validation, loading, offline, error, delete, and undo
+- motion notes for shimmer/add/delete/undo interactions
+- implementation-friendly specs for spacing, colours, typography, and component behaviour
 
-The design should be implementation-friendly for Compose Multiplatform.
+The design should be practical for Compose Multiplatform implementation within a coding challenge timeframe.
