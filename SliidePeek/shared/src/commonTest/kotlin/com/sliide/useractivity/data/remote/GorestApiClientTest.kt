@@ -85,6 +85,34 @@ class GorestApiClientTest {
     }
 
     @Test
+    fun `deletes user with bearer token`() = runTest {
+        var capturedMethod: String? = null
+        var capturedPath: String? = null
+        var capturedAuthorization: String? = null
+        val apiClient = GorestApiClient(
+            httpClient = HttpClient(MockEngine) {
+                expectSuccess = true
+                engine {
+                    addHandler { request ->
+                        capturedMethod = request.method.value
+                        capturedPath = request.url.encodedPath
+                        capturedAuthorization = request.headers[HttpHeaders.Authorization]
+                        respond("", HttpStatusCode.NoContent)
+                    }
+                }
+                install(ContentNegotiation) { json(gorestJson) }
+            },
+            baseUrl = "https://example.test/public/v2",
+        )
+
+        apiClient.deleteUser(id = 99, bearerToken = "test-token")
+
+        assertEquals("DELETE", capturedMethod)
+        assertEquals("/public/v2/users/99", capturedPath)
+        assertEquals("Bearer test-token", capturedAuthorization)
+    }
+
+    @Test
     fun `parses posts comments and todos`() = runTest {
         val apiClient = GorestApiClient(
             httpClient = routedMockClient(

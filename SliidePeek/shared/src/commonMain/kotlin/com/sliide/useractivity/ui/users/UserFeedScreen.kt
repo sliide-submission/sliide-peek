@@ -1,5 +1,12 @@
 package com.sliide.useractivity.ui.users
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +20,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +43,7 @@ fun UserFeedScreen(
     modifier: Modifier = Modifier,
     showFab: Boolean = true,
     compactRows: Boolean = false,
+    onUserLongPress: (Long) -> Unit = {},
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         UserFeedContent(
@@ -44,6 +54,7 @@ fun UserFeedScreen(
             onRetry = onRetry,
             onAddUserClick = onAddUserClick,
             compactRows = compactRows,
+            onUserLongPress = onUserLongPress,
             modifier = Modifier.fillMaxSize(),
         )
         if (showFab && state.shouldShowFab) {
@@ -70,6 +81,7 @@ private fun UserFeedContent(
     onRetry: () -> Unit,
     onAddUserClick: () -> Unit,
     compactRows: Boolean,
+    onUserLongPress: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -113,14 +125,29 @@ private fun UserFeedContent(
                 } else if (state.errorMessage != null) {
                     FeedStatusBanner(message = state.errorMessage, isError = true)
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.animateContentSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     state.users.forEach { user ->
-                        UserFeedRow(
-                            user = user,
-                            selected = user.id == selectedUserId,
-                            onClick = { onUserClick(user.id) },
-                            compact = compactRows,
-                        )
+                        key(user.id) {
+                            val transitionState = remember {
+                                MutableTransitionState(false).apply { targetState = true }
+                            }
+                            AnimatedVisibility(
+                                visibleState = transitionState,
+                                enter = fadeIn() + expandVertically(),
+                                exit = fadeOut() + shrinkVertically(),
+                            ) {
+                                UserFeedRow(
+                                    user = user,
+                                    selected = user.id == selectedUserId,
+                                    onClick = { onUserClick(user.id) },
+                                    onLongClick = { onUserLongPress(user.id) },
+                                    compact = compactRows,
+                                )
+                            }
+                        }
                     }
                 }
             }

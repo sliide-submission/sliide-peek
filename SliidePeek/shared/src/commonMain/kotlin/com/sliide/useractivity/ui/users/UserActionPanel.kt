@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -107,8 +108,11 @@ fun UserActionPanel(
         SectionHeader(title = "Actions")
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(
-                enabled = false,
                 onClick = { onDeleteUserClick(user.id) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                ),
             ) {
                 Text("Delete user")
             }
@@ -116,11 +120,6 @@ fun UserActionPanel(
                 Text("Add user")
             }
         }
-        Text(
-            text = "Add and delete actions are visible seams for the next roadmap items.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall,
-        )
     }
 }
 

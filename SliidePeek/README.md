@@ -57,4 +57,15 @@ UX v2 alignment now keeps the smart feed focused on the re-scoped user-managemen
 - API error, no-internet/no-cache, refreshing, and in-memory offline/cached states use distinct feed states/banners;
 - tablet selection shows a lightweight user action-panel placeholder instead of the earlier UX v1 posts/todos drill-down.
 
-Full add-user, delete/undo, durable offline cache, and high-fidelity motion/visual polish remain later work.
+Roadmap 12.7 adds destructive delete with local Undo:
+
+- long-press a feed row (phone) or the tablet action-panel "Delete user" button opens a confirmation dialog;
+- confirming optimistically removes the row and shows a Snackbar with **Undo**;
+- the delete is **local-first**: Undo restores the row at its exact original index and never touches the network; the cache is only mutated on a confirmed remote success;
+- the authenticated `DELETE /users/{id}` is committed only when the Undo window closes (the Snackbar is dismissed/times out);
+- on commit failure — including when no GoREST token is configured (`Unauthorized`) — the row is re-inserted at its original index and an error Snackbar offers **Retry**; a `404` is treated as already-deleted;
+- shared `UserFeedViewModel` tests cover confirm/undo/commit-success/commit-failure, original-index restore, not-found, and double-commit edge cases.
+
+**Remote-vs-local undo semantics:** Undo is purely local and instant because it happens *before* any API call, so there is nothing to reverse on the server. Once the window closes and GoREST returns `204`, the delete is final and cannot be undone. If the app is closed during the undo window, the commit coroutine is cancelled and the user safely reappears on the next load (the cache still holds them). Remote deletes require the GoREST bearer token; without it, delete stays local and surfaces the "restored" Retry Snackbar — the same documented fallback used by add-user.
+
+Full high-fidelity motion/visual polish (countdown bar, haptics, ripple) remains later work (12.8).

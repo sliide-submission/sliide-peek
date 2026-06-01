@@ -34,6 +34,13 @@ class UserRepositoryImpl internal constructor(
         }
     }
 
+    override suspend fun deleteUser(id: Long): AppResult<Unit> {
+        val token = bearerTokenProvider.getToken() ?: return AppResult.Failure(AppError.Unauthorized)
+        return repositoryCall {
+            apiClient.deleteUser(id = id, bearerToken = token)
+        }
+    }
+
     override suspend fun getUser(id: Long): AppResult<User> = repositoryCall {
         apiClient.getUser(id).toDomain()
     }

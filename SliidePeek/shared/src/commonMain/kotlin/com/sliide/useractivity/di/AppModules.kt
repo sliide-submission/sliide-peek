@@ -19,6 +19,8 @@ import com.sliide.useractivity.domain.time.AppClock
 import com.sliide.useractivity.domain.time.SystemAppClock
 import com.sliide.useractivity.presentation.users.CreateUserUseCase
 import com.sliide.useractivity.presentation.users.CreateUserUseCaseImpl
+import com.sliide.useractivity.presentation.users.DeleteUserUseCase
+import com.sliide.useractivity.presentation.users.DeleteUserUseCaseImpl
 import com.sliide.useractivity.presentation.users.GetSmartUserFeedUseCase
 import com.sliide.useractivity.presentation.users.LoadUserFeedUseCase
 import com.sliide.useractivity.presentation.users.UserFeedViewModel
@@ -52,10 +54,17 @@ fun appModule(databaseDriverFactory: DatabaseDriverFactory): Module = module {
             clock = get(),
         )
     }
+    factory<DeleteUserUseCase> {
+        DeleteUserUseCaseImpl(
+            userRepository = get(),
+            userCacheDataSource = get(),
+        )
+    }
     factory { params ->
         UserFeedViewModel(
             loadUserFeed = get(),
             createUser = get(),
+            deleteUser = get(),
             scope = params.get<CoroutineScope>(),
             clock = get(),
         )

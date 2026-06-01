@@ -1,7 +1,8 @@
 package com.sliide.useractivity.ui.users
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import com.sliide.useractivity.ui.components.InitialsAvatar
 import com.sliide.useractivity.ui.components.StatusChip
 import com.sliide.useractivity.ui.theme.selectionContainerColor
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserFeedRow(
     user: UserFeedItem,
@@ -30,11 +32,12 @@ fun UserFeedRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(10.dp),
         color = if (selected) selectionContainerColor() else MaterialTheme.colorScheme.surface,
         border = BorderStroke(

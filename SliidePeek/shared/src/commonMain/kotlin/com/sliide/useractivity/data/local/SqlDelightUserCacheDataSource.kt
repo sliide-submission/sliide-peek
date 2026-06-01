@@ -85,6 +85,10 @@ class SqlDelightUserCacheDataSource(
         }
     }
 
+    override suspend fun deleteUser(id: Long) {
+        queries.deleteUserById(id)
+    }
+
     private companion object {
         const val LAST_PAGE_CACHE_KEY = "users:last-page"
         const val DEFAULT_LOCAL_PER_PAGE = 20L

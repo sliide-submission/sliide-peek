@@ -116,6 +116,67 @@ class UserRepositoryImplTest {
         assertIs<AppError.Validation>(assertIs<AppResult.Failure>(result).error)
     }
 
+    @Test
+    fun `deletes user with token on success`() = runTest {
+        var capturedMethod: String? = null
+        var capturedPath: String? = null
+        var capturedAuthorization: String? = null
+        val repository = UserRepositoryImpl(
+            GorestApiClient(
+                HttpClient(MockEngine) {
+                    expectSuccess = true
+                    engine {
+                        addHandler { request ->
+                            capturedMethod = request.method.value
+                            capturedPath = request.url.encodedPath
+                            capturedAuthorization = request.headers[HttpHeaders.Authorization]
+                            respond("", HttpStatusCode.NoContent)
+                        }
+                    }
+                    install(ContentNegotiation) { json(gorestJson) }
+                },
+                "https://example.test/public/v2",
+            ),
+            FakeTokenProvider("token"),
+        )
+
+        val result = repository.deleteUser(99)
+
+        assertIs<AppResult.Success<*>>(result)
+        assertEquals("DELETE", capturedMethod)
+        assertEquals("/public/v2/users/99", capturedPath)
+        assertEquals("Bearer token", capturedAuthorization)
+    }
+
+    @Test
+    fun `delete without token returns unauthorized without network request`() = runTest {
+        var requestCount = 0
+        val repository = UserRepositoryImpl(
+            GorestApiClient(
+                mockClient("", status = HttpStatusCode.NoContent, onRequest = { requestCount++ }),
+                "https://example.test/public/v2",
+            ),
+            FakeTokenProvider(null),
+        )
+
+        val result = repository.deleteUser(99)
+
+        assertEquals(AppError.Unauthorized, assertIs<AppResult.Failure>(result).error)
+        assertEquals(0, requestCount)
+    }
+
+    @Test
+    fun `delete maps 404 response to not found`() = runTest {
+        val repository = UserRepositoryImpl(
+            GorestApiClient(mockClient("""{"message":"Not Found"}""", status = HttpStatusCode.NotFound), "https://example.test/public/v2"),
+            FakeTokenProvider("token"),
+        )
+
+        val result = repository.deleteUser(99)
+
+        assertEquals(AppError.NotFound, assertIs<AppResult.Failure>(result).error)
+    }
+
     private fun mockClient(
         body: String,
         status: HttpStatusCode = HttpStatusCode.OK,

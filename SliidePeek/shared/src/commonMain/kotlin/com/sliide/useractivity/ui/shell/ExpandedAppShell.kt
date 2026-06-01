@@ -35,6 +35,8 @@ fun ExpandedAppShell(
     onAddUserGenderSelected: (UserGender) -> Unit,
     onAddUserStatusSelected: (UserStatus) -> Unit,
     onSubmitAddUser: () -> Unit,
+    onUserLongPress: (Long) -> Unit,
+    onDeleteUserClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AppScaffold(modifier = modifier) {
@@ -62,6 +64,7 @@ fun ExpandedAppShell(
                         onAddUserClick = onAddUserClick,
                         showFab = false,
                         compactRows = true,
+                        onUserLongPress = onUserLongPress,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
@@ -79,7 +82,7 @@ fun ExpandedAppShell(
                     onAddUserGenderSelected = onAddUserGenderSelected,
                     onAddUserStatusSelected = onAddUserStatusSelected,
                     onSubmitAddUser = onSubmitAddUser,
-                    onDeleteUserClick = {},
+                    onDeleteUserClick = onDeleteUserClick,
                     modifier = Modifier.fillMaxSize(),
                 )
             }

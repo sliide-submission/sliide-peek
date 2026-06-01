@@ -62,6 +62,7 @@ class CreateUserUseCaseTest {
             insertedUser = user
             this.createdAtMillis = createdAtMillis
         }
+        override suspend fun deleteUser(id: Long) = Unit
     }
 
     private class FakeUserRepository(
@@ -69,6 +70,7 @@ class CreateUserUseCaseTest {
     ) : UserRepository {
         override suspend fun getUsers(page: Int, perPage: Int): AppResult<Page<User>> = error("Not needed")
         override suspend fun createUser(request: CreateUserRequest): AppResult<User> = result
+        override suspend fun deleteUser(id: Long): AppResult<Unit> = error("Not needed")
         override suspend fun getUser(id: Long): AppResult<User> = error("Not needed")
         override suspend fun getUserPosts(userId: Long): AppResult<List<Post>> = error("Not needed")
         override suspend fun getUserTodos(userId: Long): AppResult<List<Todo>> = error("Not needed")

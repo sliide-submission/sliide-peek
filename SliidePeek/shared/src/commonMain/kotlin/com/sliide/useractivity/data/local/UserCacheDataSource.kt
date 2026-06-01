@@ -17,4 +17,6 @@ interface UserCacheDataSource {
         createdAtMillis: Long,
         cachedAtMillis: Long,
     )
+
+    suspend fun deleteUser(id: Long)
 }

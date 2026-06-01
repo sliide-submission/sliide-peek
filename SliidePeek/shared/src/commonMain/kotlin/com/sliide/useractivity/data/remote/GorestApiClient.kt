@@ -7,6 +7,7 @@ import com.sliide.useractivity.data.remote.dto.TodoDTO
 import com.sliide.useractivity.data.remote.dto.UserDTO
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.parameter
@@ -46,6 +47,13 @@ internal class GorestApiClient(
         header(HttpHeaders.Authorization, "Bearer $bearerToken")
         setBody(request)
     }.body()
+
+    suspend fun deleteUser(id: Long, bearerToken: String) {
+        httpClient.delete(baseUrl) {
+            url { appendPathSegments("users", id.toString()) }
+            header(HttpHeaders.Authorization, "Bearer $bearerToken")
+        }
+    }
 
     suspend fun getUserPosts(userId: Long): List<PostDTO> = httpClient.get(baseUrl) {
         url { appendPathSegments("users", userId.toString(), "posts") }

@@ -31,6 +31,7 @@ fun CompactAppShell(
     onAddUserGenderSelected: (UserGender) -> Unit,
     onAddUserStatusSelected: (UserStatus) -> Unit,
     onSubmitAddUser: () -> Unit,
+    onUserLongPress: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val route = navigator.currentRoute
@@ -57,6 +58,7 @@ fun CompactAppShell(
                 onRefresh = onUserFeedRefresh,
                 onRetry = onUserFeedRetry,
                 onAddUserClick = onAddUserClick,
+                onUserLongPress = onUserLongPress,
                 modifier = Modifier.fillMaxSize(),
             )
 

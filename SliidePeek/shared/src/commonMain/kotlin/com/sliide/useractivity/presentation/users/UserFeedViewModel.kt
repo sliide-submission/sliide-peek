@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 class UserFeedViewModel(
     private val loadUserFeed: LoadUserFeedUseCase,
     private val createUser: CreateUserUseCase,
+    private val deleteUser: DeleteUserUseCase,
     private val scope: CoroutineScope,
     private val clock: AppClock,
     private val relativeTimeFormatter: RelativeTimeFormatter = RelativeTimeFormatter(),
@@ -30,6 +31,8 @@ class UserFeedViewModel(
 
     private val eventsChannel = Channel<UserFeedEvent>(capacity = Channel.BUFFERED)
     val events: Flow<UserFeedEvent> = eventsChannel.receiveAsFlow()
+
+    private val pendingDeletions = mutableMapOf<Long, PendingDeletion>()
 
     fun load() {
         val current = _state.value
@@ -116,6 +119,82 @@ class UserFeedViewModel(
         }
     }
 
+    fun requestDeleteUser(id: Long) {
+        val user = _state.value.users.firstOrNull { it.id == id } ?: return
+        _state.update { it.copy(deleteConfirmation = user) }
+    }
+
+    fun cancelDeleteUser() {
+        _state.update { it.copy(deleteConfirmation = null) }
+    }
+
+    fun confirmDeleteUser() {
+        val user = _state.value.deleteConfirmation ?: return
+        _state.update { it.copy(deleteConfirmation = null) }
+        beginOptimisticDelete(user)
+    }
+
+    fun undoDelete(id: Long) {
+        val pending = pendingDeletions.remove(id) ?: return
+        _state.update { current ->
+            val index = pending.index.coerceIn(0, current.users.size)
+            current.copy(
+                users = current.users.toMutableList().apply { add(index, pending.item) },
+                highlightedUserId = pending.item.id,
+            )
+        }
+    }
+
+    fun commitDeletion(id: Long) {
+        val pending = pendingDeletions[id] ?: return
+        scope.launch {
+            val result = deleteUser(id)
+            pendingDeletions.remove(id)
+            // A 404 means the user is already gone server-side, so the delete goal is met:
+            // treat it as committed rather than restoring a user that no longer exists.
+            if (result is AppResult.Failure && result.error != AppError.NotFound) {
+                restorePendingUser(pending)
+                eventsChannel.send(
+                    UserFeedEvent.ShowDeleteFailed(
+                        userId = id,
+                        message = result.error.toDeleteUserMessage(),
+                    ),
+                )
+            }
+        }
+    }
+
+    fun retryDelete(id: Long) {
+        val user = _state.value.users.firstOrNull { it.id == id } ?: return
+        beginOptimisticDelete(user)
+    }
+
+    private fun beginOptimisticDelete(user: UserFeedItem) {
+        val index = _state.value.users.indexOfFirst { it.id == user.id }
+        if (index < 0) return
+        pendingDeletions[user.id] = PendingDeletion(item = user, index = index)
+        _state.update { current ->
+            current.copy(
+                users = current.users.filterNot { it.id == user.id },
+                highlightedUserId = if (current.highlightedUserId == user.id) null else current.highlightedUserId,
+            )
+        }
+        scope.launch {
+            eventsChannel.send(UserFeedEvent.ShowUndoDelete(userId = user.id, message = "${user.name} deleted"))
+        }
+    }
+
+    private fun restorePendingUser(pending: PendingDeletion) {
+        _state.update { current ->
+            if (current.users.any { it.id == pending.item.id }) return@update current
+            val index = pending.index.coerceIn(0, current.users.size)
+            current.copy(
+                users = current.users.toMutableList().apply { add(index, pending.item) },
+                highlightedUserId = pending.item.id,
+            )
+        }
+    }
+
     private fun updateAddUserForm(transform: (AddUserFormState) -> AddUserFormState) {
         _state.update { current ->
             current.copy(addUserForm = addUserFormValidator.validate(transform(current.addUserForm)))
@@ -194,6 +273,16 @@ class UserFeedViewModel(
         is AppError.Unknown -> message ?: "Couldn’t add user. Please try again."
     }
 
+    private fun AppError.toDeleteUserMessage(): String = when (this) {
+        AppError.Network -> "Couldn’t delete — you’re offline. The user was restored."
+        AppError.Timeout -> "Couldn’t delete — the connection timed out. The user was restored."
+        AppError.Unauthorized -> "GoREST API token required to delete users. The user was restored."
+        AppError.NotFound -> "That user no longer exists."
+        is AppError.Validation -> message ?: "Couldn’t delete — the user was restored."
+        is AppError.Server -> "Couldn’t delete — the service is unavailable. The user was restored."
+        is AppError.Unknown -> message ?: "Couldn’t delete — the user was restored."
+    }
+
     private fun AppError.toUserMessage(): String = when (this) {
         AppError.Network -> "No internet connection. Try again when you are back online."
         AppError.Timeout -> "The connection timed out. Please try again."
@@ -203,4 +292,9 @@ class UserFeedViewModel(
         is AppError.Server -> "The service is unavailable right now. Please try again."
         is AppError.Unknown -> message ?: "Something went wrong. Please try again."
     }
+
+    private data class PendingDeletion(
+        val item: UserFeedItem,
+        val index: Int,
+    )
 }

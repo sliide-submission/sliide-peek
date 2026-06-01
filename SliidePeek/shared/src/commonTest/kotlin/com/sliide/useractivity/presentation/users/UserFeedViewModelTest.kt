@@ -8,6 +8,8 @@ import com.sliide.useractivity.domain.model.UserStatus
 import com.sliide.useractivity.domain.time.AppClock
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.TestScope
@@ -251,13 +253,176 @@ class UserFeedViewModelTest {
         assertEquals("GoREST API token required to add users. Add it locally and rebuild.", state.addUserForm.submitErrorMessage)
     }
 
+    @Test
+    fun `requesting then cancelling delete leaves the feed untouched`() = runTest {
+        val viewModel = loadedViewModel(listOf(1, 2, 3))
+
+        viewModel.requestDeleteUser(2)
+        assertEquals(2L, viewModel.state.value.deleteConfirmation?.id)
+
+        viewModel.cancelDeleteUser()
+        assertEquals(null, viewModel.state.value.deleteConfirmation)
+        assertEquals(listOf(1L, 2L, 3L), viewModel.state.value.users.map { it.id })
+    }
+
+    @Test
+    fun `confirming delete removes the row and emits an undo snackbar`() = runTest {
+        val events = RecordedEvents()
+        val viewModel = loadedViewModel(listOf(1, 2, 3), events = events)
+
+        viewModel.requestDeleteUser(2)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(null, state.deleteConfirmation)
+        assertEquals(listOf(1L, 3L), state.users.map { it.id })
+        assertEquals(
+            listOf<UserFeedEvent>(UserFeedEvent.ShowUndoDelete(userId = 2, message = "User 2 deleted")),
+            events.events.toList(),
+        )
+    }
+
+    @Test
+    fun `undo restores the row at its original index without calling delete`() = runTest {
+        val delete = FakeDeleteUserUseCase()
+        val viewModel = loadedViewModel(listOf(1, 2, 3), deleteUser = delete)
+
+        viewModel.requestDeleteUser(2)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+        assertEquals(listOf(1L, 3L), viewModel.state.value.users.map { it.id })
+
+        viewModel.undoDelete(2)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(listOf(1L, 2L, 3L), state.users.map { it.id })
+        assertEquals(2L, state.highlightedUserId)
+        assertTrue(delete.deletedIds.isEmpty())
+    }
+
+    @Test
+    fun `committing a deletion calls delete once and keeps the row gone`() = runTest {
+        val delete = FakeDeleteUserUseCase(AppResult.Success(Unit))
+        val viewModel = loadedViewModel(listOf(1, 2, 3), deleteUser = delete)
+
+        viewModel.requestDeleteUser(2)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+
+        viewModel.commitDeletion(2)
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 3L), viewModel.state.value.users.map { it.id })
+        assertEquals(listOf(2L), delete.deletedIds)
+    }
+
+    @Test
+    fun `commit failure restores the row at its index and emits a failure snackbar`() = runTest {
+        val events = RecordedEvents()
+        val delete = FakeDeleteUserUseCase(AppResult.Failure(AppError.Server(500)))
+        val viewModel = loadedViewModel(listOf(1, 2, 3), deleteUser = delete, events = events)
+
+        viewModel.requestDeleteUser(2)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+
+        viewModel.commitDeletion(2)
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(listOf(1L, 2L, 3L), state.users.map { it.id })
+        assertEquals(2L, state.highlightedUserId)
+        assertTrue(events.events.any { it is UserFeedEvent.ShowDeleteFailed && it.userId == 2L })
+    }
+
+    @Test
+    fun `commit of a not-found user is treated as deleted and does not restore`() = runTest {
+        val events = RecordedEvents()
+        val delete = FakeDeleteUserUseCase(AppResult.Failure(AppError.NotFound))
+        val viewModel = loadedViewModel(listOf(1, 2, 3), deleteUser = delete, events = events)
+
+        viewModel.requestDeleteUser(2)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+
+        viewModel.commitDeletion(2)
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 3L), viewModel.state.value.users.map { it.id })
+        assertFalse(events.events.any { it is UserFeedEvent.ShowDeleteFailed })
+    }
+
+    @Test
+    fun `undo and commit after the window closed are no-ops`() = runTest {
+        val delete = FakeDeleteUserUseCase(AppResult.Success(Unit))
+        val viewModel = loadedViewModel(listOf(1, 2, 3), deleteUser = delete)
+
+        viewModel.requestDeleteUser(2)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+        viewModel.commitDeletion(2)
+        advanceUntilIdle()
+        assertEquals(listOf(2L), delete.deletedIds)
+
+        // A late Undo tap after commit must not resurrect the row, and a second
+        // commit must not call delete again.
+        viewModel.undoDelete(2)
+        viewModel.commitDeletion(2)
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 3L), viewModel.state.value.users.map { it.id })
+        assertEquals(listOf(2L), delete.deletedIds)
+    }
+
+    @Test
+    fun `deleting the only user empties the feed and undo restores it`() = runTest {
+        val viewModel = loadedViewModel(listOf(1))
+
+        viewModel.requestDeleteUser(1)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.isEmpty)
+
+        viewModel.undoDelete(1)
+        advanceUntilIdle()
+        assertEquals(listOf(1L), viewModel.state.value.users.map { it.id })
+        assertFalse(viewModel.state.value.isEmpty)
+    }
+
+    private fun TestScope.loadedViewModel(
+        ids: List<Long>,
+        deleteUser: DeleteUserUseCase = FakeDeleteUserUseCase(),
+        events: RecordedEvents? = null,
+    ): UserFeedViewModel {
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Success(feedResult(ids.map(::feedUser))))),
+            deleteUser = deleteUser,
+        )
+        if (events != null) {
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.events.collect(events.events::add)
+            }
+        }
+        viewModel.load()
+        advanceUntilIdle()
+        return viewModel
+    }
+
+    private class RecordedEvents {
+        val events = mutableListOf<UserFeedEvent>()
+    }
+
     private fun TestScope.viewModel(
         loadUserFeedUseCase: LoadUserFeedUseCase,
         createUser: CreateUserUseCase = FakeCreateUserUseCase(AppResult.Failure(AppError.Unauthorized)),
+        deleteUser: DeleteUserUseCase = FakeDeleteUserUseCase(),
         nowMillis: Long = 1_000,
     ): UserFeedViewModel = UserFeedViewModel(
         loadUserFeed = loadUserFeedUseCase,
         createUser = createUser,
+        deleteUser = deleteUser,
         scope = this,
         clock = FixedClock(nowMillis),
     )
@@ -279,6 +444,17 @@ class UserFeedViewModelTest {
         override suspend fun invoke(request: CreateUserRequest): AppResult<UserFeedItem> {
             requests += request
             return result ?: pending!!.await()
+        }
+    }
+
+    private class FakeDeleteUserUseCase(
+        private val result: AppResult<Unit> = AppResult.Success(Unit),
+    ) : DeleteUserUseCase {
+        val deletedIds = mutableListOf<Long>()
+
+        override suspend fun invoke(id: Long): AppResult<Unit> {
+            deletedIds += id
+            return result
         }
     }
 
