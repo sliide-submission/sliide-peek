@@ -1,0 +1,16 @@
+[
+  {
+    "id": 8484086,
+    "name": "Bhargava Adiga",
+    "email": "adiga_bhargava@klocko.test",
+    "gender": "male",
+    "status": "active"
+  },
+  {
+    "id": 8484087,
+    "name": "Priya Nair",
+    "email": "priya.nair@example.test",
+    "gender": "female",
+    "status": "inactive"
+  }
+]

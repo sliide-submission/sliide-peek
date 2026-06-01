@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Activity Manager — UX Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4f3ef;
+    --paper-2:#fbfbf9;
+    --ink:#2b2b2b;
+    --ink-2:#6a6a66;
+    --ink-3:#9a9a94;
+    --line:#d2d2cb;
+    --line-strong:#b9b9b1;
+    --fill:#e9e9e4;
+    --fill-2:#f0f0ec;
+    --fill-3:#f6f6f3;
+    --accent:#e7c64d;          /* muted amber — selection / active only */
+    --accent-soft:#f6ecc4;
+    --accent-line:#d8b53a;
+    --note:#3a6ea5;            /* annotation blue */
+    --skel-a:#e6e6e1;
+    --skel-b:#f1f1ec;
+    --radius:18px;
+    --r-card:12px;
+    --r-chip:999px;
+    font-family:'Montserrat',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--paper);
+    background-image:radial-gradient(var(--line) 1px, transparent 1px);
+    background-size:22px 22px;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Canvas chrome ---------- */
+  .canvas{padding:64px 72px 140px;}
+  .masthead{max-width:1100px;margin:0 0 18px;}
+  .kicker{font-family:'Caveat',cursive;font-size:30px;color:var(--note);transform:rotate(-1.5deg);display:inline-block;margin-bottom:4px;}
+  .masthead h1{font-size:40px;font-weight:800;letter-spacing:-0.02em;margin:0 0 10px;}
+  .masthead p{font-size:15px;line-height:1.6;color:var(--ink-2);max-width:680px;margin:0;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin:22px 0 0;padding:16px 20px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;max-width:1100px;}
+  .legend .li{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);}
+  .legend .sw{width:26px;height:14px;border-radius:4px;border:1px solid var(--line-strong);}
+  .legend .sw.skel{background:linear-gradient(100deg,var(--skel-a) 30%,var(--skel-b) 50%,var(--skel-a) 70%);}
+  .legend .sw.fillsw{background:var(--fill);}
+  .legend .sw.acc{background:var(--accent-soft);border-color:var(--accent-line);}
+  .legend .sw.img{background:repeating-linear-gradient(45deg,var(--fill) 0 6px,var(--fill-2) 6px 12px);}
+
+  /* ---------- Section ---------- */
+  .section{margin-top:72px;max-width:1500px;}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:6px;}
+  .sec-num{font-family:'Caveat',cursive;font-size:34px;color:var(--accent-line);font-weight:700;}
+  .sec-head h2{font-size:24px;font-weight:700;letter-spacing:-0.01em;margin:0;}
+  .sec-sub{font-size:13.5px;color:var(--ink-2);margin:0 0 26px;max-width:760px;line-height:1.55;}
+
+  .row{display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start;}
+  .flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+
+  /* ---------- Frame + caption ---------- */
+  .unit{display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .caption{font-size:12px;font-weight:600;color:var(--ink-2);text-align:center;}
+  .caption b{display:block;color:var(--ink);font-size:12.5px;font-weight:700;margin-bottom:2px;}
+
+  /* ---------- Phone ---------- */
+  .phone{width:300px;height:620px;background:var(--paper-2);border:2px solid var(--ink);border-radius:34px;padding:9px;box-shadow:0 14px 30px rgba(20,20,18,0.10);}
+  .screen{width:100%;height:100%;background:#fff;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+  .statusbar{height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:11px;font-weight:600;color:var(--ink-2);}
+  .notch{position:absolute;top:7px;left:50%;transform:translateX(-50%);width:78px;height:18px;background:var(--ink);border-radius:0 0 12px 12px;z-index:5;}
+  .appbar{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);min-height:50px;}
+  .appbar .ttl{font-size:16px;font-weight:700;}
+  .appbar .sub{font-size:11px;color:var(--ink-3);font-weight:500;}
+  .chev{width:22px;height:22px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:var(--ink-2);font-size:20px;line-height:1;}
+  .appbar .spacer{flex:1;}
+  .icon-btn{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-2);font-size:14px;}
+  .body{flex:1;overflow:hidden;padding:12px;display:flex;flex-direction:column;gap:10px;}
+  .body.tight{gap:8px;}
+
+  /* ---------- Wireframe primitives ---------- */
+  .avatar{width:38px;height:38px;border-radius:50%;background:var(--fill);border:1px solid var(--line);flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:13px;font-weight:600;}
+  .avatar.sm{width:28px;height:28px;font-size:11px;}
+  .line{height:10px;border-radius:5px;background:var(--fill);}
+  .line.dk{background:var(--line-strong);}
+  .img-ph{background:repeating-linear-gradient(45deg,var(--fill) 0 7px,var(--fill-2) 7px 14px);border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:11px;}
+
+  .urow{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);}
+  .urow .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+  .nm{font-size:13.5px;font-weight:600;color:var(--ink);}
+  .em{font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* chips */
+  .chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:var(--r-chip);font-size:10.5px;font-weight:600;border:1px solid var(--line-strong);color:var(--ink-2);background:#fff;white-space:nowrap;}
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-3);}
+  .chip.active{border-color:var(--accent-line);background:var(--accent-soft);color:#7a5e00;}
+  .chip.active .dot{background:var(--accent-line);}
+  .chip.done{border-style:solid;}
+  .chip.done .dot{background:var(--ink);}
+  .chip.gender{font-weight:500;}
+
+  .sect-h{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-3);margin:4px 2px 2px;}
+  .sect-h .count{font-weight:600;letter-spacing:0;color:var(--ink-3);}
+  .sect-h .ln{flex:1;height:1px;background:var(--line);}
+
+  .pcard{border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--paper-2);display:flex;flex-direction:column;gap:7px;}
+  .pcard .ptitle{font-size:12.5px;font-weight:600;line-height:1.3;color:var(--ink);}
+
+  .trow{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);}
+  .tcheck{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-strong);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;}
+  .tcheck.on{background:var(--ink);border-color:var(--ink);}
+  .trow .tmeta{flex:1;min-width:0;}
+  .ttitle{font-size:12px;font-weight:600;color:var(--ink);}
+  .tdue{font-size:10.5px;color:var(--ink-3);margin-top:3px;}
+  .trow.done .ttitle{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--line-strong);}
+
+  .ccard{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:var(--paper-2);display:flex;gap:9px;}
+  .ccard .cmeta{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;}
+
+  /* filter bar */
+  .filterbar{display:flex;gap:7px;}
+  .seg{flex:1;text-align:center;font-size:11px;font-weight:600;padding:7px 0;border:1px solid var(--line-strong);border-radius:8px;color:var(--ink-2);background:#fff;}
+  .seg.on{background:var(--accent-soft);border-color:var(--accent-line);color:#7a5e00;}
+
+  /* shimmer skeleton */
+  .skel{position:relative;overflow:hidden;background:var(--skel-a);border-radius:5px;}
+  .skel::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,0.75) 50%,transparent 80%);transform:translateX(-100%);animation:sh 1.5s ease-in-out infinite;}
+  @keyframes sh{to{transform:translateX(100%);}}
+  .skel-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-2);}
+  .skel.circ{border-radius:50%;}
+
+  /* centered state blocks */
+  .state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:24px;}
+  .state .ph-icon{width:64px;height:64px;border-radius:16px;border:2px dashed var(--line-strong);display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:26px;}
+  .state .st-ttl{font-size:14px;font-weight:700;color:var(--ink);}
+  .state .st-bd{font-size:11.5px;color:var(--ink-2);line-height:1.5;max-width:200px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;height:34px;padding:0 18px;border-radius:var(--r-chip);font-size:12px;font-weight:700;background:var(--ink);color:#fff;border:none;}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line-strong);}
+
+  /* arrows between frames */
+  .arrow{display:flex;flex-direction:column;align-items:center;gap:5px;align-self:center;color:var(--note);min-width:64px;}
+  .arrow svg{width:54px;height:24px;}
+  .arrow .lbl{font-family:'Caveat',cursive;font-size:17px;color:var(--note);line-height:1;text-align:center;}
+
+  /* annotations */
+  .note{font-family:'Caveat',cursive;color:var(--note);font-size:18px;line-height:1.25;max-width:200px;}
+  .note.bend{transform:rotate(-1deg);}
+  .note-card{align-self:flex-start;border:1.5px dashed var(--note);border-radius:12px;padding:14px 16px;background:rgba(58,110,165,0.05);max-width:230px;}
+  .note-card .nt{font-family:'Caveat',cursive;font-size:20px;color:var(--note);font-weight:700;margin-bottom:6px;}
+  .note-card ul{margin:0;padding-left:16px;}
+  .note-card li{font-size:12px;color:var(--ink-2);line-height:1.5;margin-bottom:4px;font-family:'Montserrat',sans-serif;}
+
+  /* ---------- iPad ---------- */
+  .ipad{background:var(--paper-2);border:2px solid var(--ink);border-radius:24px;padding:14px;box-shadow:0 14px 30px rgba(20,20,18,0.10);}
+  .ipad.land{width:920px;height:660px;}
+  .ipad.port{width:470px;height:640px;}
+  .ipad .screen{border-radius:12px;flex-direction:row;}
+  .ipad.port .screen{flex-direction:row;}
+  .pane{height:100%;display:flex;flex-direction:column;overflow:hidden;}
+  .pane.list{flex:0 0 320px;border-right:1px solid var(--line);}
+  .ipad.port .pane.list{flex:0 0 260px;}
+  .pane.detail{flex:1;}
+  .urow.sel{border-color:var(--accent-line);background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent-line);}
+
+  .detail-hero{padding:18px 18px 14px;border-bottom:1px solid var(--line);display:flex;gap:14px;align-items:center;}
+  .detail-hero .big-av{width:58px;height:58px;border-radius:50%;background:var(--fill);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-weight:600;font-size:18px;flex:0 0 auto;}
+  .detail-body{flex:1;overflow:hidden;padding:14px 18px;display:flex;flex-direction:column;gap:10px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+
+  /* component spec grid */
+  .specs{display:flex;flex-wrap:wrap;gap:18px;}
+  .spec{width:248px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+  .spec .sp-ttl{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-3);}
+  .spec .sp-demo{display:flex;flex-direction:column;gap:8px;}
+
+  .pill-tabs{display:flex;gap:6px;align-items:center;}
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- ===== Masthead ===== -->
+  <div class="masthead">
+    <div class="kicker">low / mid-fi · structure first</div>
+    <h1>User Activity Manager — UX Wireframes</h1>
+    <p>A flow-map of the core experience: browse users → open a profile → read posts &amp; comments, scan todos. Phone uses simple push/stack navigation; iPad uses an adaptive 2-pane master–detail. Grayscale blocks with real labels — amber marks selection &amp; active states only. Hi-fi light/dark comes after this structure is agreed.</p>
+    <div class="legend">
+      <div class="li"><span class="sw fillsw"></span> Content block / real label</div>
+      <div class="li"><span class="sw img"></span> Image / avatar placeholder</div>
+      <div class="li"><span class="sw skel"></span> Shimmer skeleton (animated)</div>
+      <div class="li"><span class="sw acc"></span> Selected / active accent</div>
+      <div class="li"><span style="font-family:'Caveat',cursive;color:var(--note);font-size:18px;">✎ note</span> Design rationale</div>
+    </div>
+  </div>
+
+  <!-- ===== Section 01 — User List states ===== -->
+  <section class="section">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Phone · User List — all states</h2></div>
+    <p class="sec-sub">Entry screen. Each row carries name, email, status and a subtle gender marker. An active/inactive filter sits under the title. Shimmer placeholders mirror the row layout so the jump to content doesn't shift anything.</p>
+    <div class="row">
+
+      <!-- Loading -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="ttl">Users</span><span class="spacer"></span><span class="icon-btn">⟳</span></div>
+          <div class="body tight">
+            <div class="filterbar"><span class="seg on">All</span><span class="seg">Active</span><span class="seg">Inactive</span></div>
+            <div class="skel-row"><div class="skel circ" style="width:38px;height:38px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px;"><div class="skel" style="height:10px;width:70%;"></div><div class="skel" style="height:9px;width:90%;"></div></div><div class="skel" style="width:46px;height:20px;border-radius:999px;"></div></div>
+            <div class="skel-row"><div class="skel circ" style="width:38px;height:38px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px;"><div class="skel" style="height:10px;width:55%;"></div><div class="skel" style="height:9px;width:80%;"></div></div><div class="skel" style="width:46px;height:20px;border-radius:999px;"></div></div>
+            <div class="skel-row"><div class="skel circ" style="width:38px;height:38px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px;"><div class="skel" style="height:10px;width:65%;"></div><div class="skel" style="height:9px;width:85%;"></div></div><div class="skel" style="width:46px;height:20px;border-radius:999px;"></div></div>
+            <div class="skel-row"><div class="skel circ" style="width:38px;height:38px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px;"><div class="skel" style="height:10px;width:60%;"></div><div class="skel" style="height:9px;width:75%;"></div></div><div class="skel" style="width:46px;height:20px;border-radius:999px;"></div></div>
+            <div class="skel-row"><div class="skel circ" style="width:38px;height:38px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:7px;"><div class="skel" style="height:10px;width:50%;"></div><div class="skel" style="height:9px;width:82%;"></div></div><div class="skel" style="width:46px;height:20px;border-radius:999px;"></div></div>
+          </div>
+        </div></div>
+        <div class="caption"><b>1 · Loading</b>shimmer rows</div>
+      </div>
+
+      <!-- Populated -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="ttl">Users</span><span class="sub">24</span><span class="spacer"></span><span class="icon-btn">⟳</span></div>
+          <div class="body tight">
+            <div class="filterbar"><span class="seg on">All</span><span class="seg">Active</span><span class="seg">Inactive</span></div>
+            <div class="urow"><div class="avatar">AS</div><div class="meta"><span class="nm">Aarav Sharma</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fb9a9a899a8dd588939a89969abb9e839a968b979ed5989496">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span>Active</span></div>
+            <div class="urow"><div class="avatar">PN</div><div class="meta"><span class="nm">Priya Nair</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3141435848501f5f505843715449505c415d541f525e5c">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span>Active</span></div>
+            <div class="urow"><div class="avatar">MB</div><div class="meta"><span class="nm">Marcus Bauch</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a5c8c4d7c6d0d68bc7c4d0c6cde5c0ddc4c8d5c9c08bc6cac8">[email&#160;protected]</a></span></div><span class="chip"><span class="dot"></span>Inactive</span></div>
+            <div class="urow"><div class="avatar">EV</div><div class="meta"><span class="nm">Elena Voss</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f99c959c9798d78f968a8ab99c81989489959cd79a9694">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span>Active</span></div>
+            <div class="urow"><div class="avatar">TL</div><div class="meta"><span class="nm">Tobias Lang</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e79388858e8694c98b868980a7829f868a978b82c984888a">[email&#160;protected]</a></span></div><span class="chip"><span class="dot"></span>Inactive</span></div>
+            <div class="urow"><div class="avatar">YT</div><div class="meta"><span class="nm">Yuki Tanaka</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9ae3eff1f3b4eefbf4fbf1fbdaffe2fbf7eaf6ffb4f9f5f7">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span>Active</span></div>
+          </div>
+        </div></div>
+        <div class="caption"><b>2 · Populated</b>tap a row → detail</div>
+      </div>
+
+      <!-- Empty -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="ttl">Users</span><span class="spacer"></span><span class="icon-btn">⟳</span></div>
+          <div class="body">
+            <div class="filterbar"><span class="seg">All</span><span class="seg">Active</span><span class="seg on">Inactive</span></div>
+            <div class="state">
+              <div class="ph-icon">◍</div>
+              <div class="st-ttl">No inactive users</div>
+              <div class="st-bd">Nobody matches this filter right now. Try “All” to see everyone.</div>
+              <button class="btn ghost">Show all users</button>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption"><b>3 · Empty</b>filter / no results</div>
+      </div>
+
+      <!-- Error -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="ttl">Users</span><span class="spacer"></span><span class="icon-btn">⟳</span></div>
+          <div class="body">
+            <div class="state">
+              <div class="ph-icon">⚠</div>
+              <div class="st-ttl">Couldn’t load users</div>
+              <div class="st-bd">Check your connection and try again. Nothing was lost.</div>
+              <button class="btn">Retry</button>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption"><b>4 · Error</b>soft, retry-first</div>
+      </div>
+
+      <div class="note-card">
+        <div class="nt">Why these choices</div>
+        <ul>
+          <li>Skeleton rows match the real row geometry → no layout jump on load.</li>
+          <li>Status as a chip, not colour-only — readable for everyone, both themes.</li>
+          <li>Empty vs error are distinct: empty offers a way out, error offers retry.</li>
+          <li>Filter is a 3-way segmented control, not a hidden menu.</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== Section 02 — Drill-down flow ===== -->
+  <section class="section">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Phone · Drill-down flow (push / stack)</h2></div>
+    <p class="sec-sub">Back button drills up one level each time. User Detail is a single scroll: profile header, then stacked Posts and Todos sections with headers. A post pushes Post Detail, which carries the full body and a comments list.</p>
+    <div class="flow">
+
+      <!-- User Detail -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="chev">‹</span><span class="ttl" style="font-size:14px;">Profile</span></div>
+          <div class="body tight" style="overflow:hidden;">
+            <!-- hero -->
+            <div style="display:flex;gap:12px;align-items:center;padding:4px 2px 8px;">
+              <div class="avatar" style="width:52px;height:52px;font-size:16px;">PN</div>
+              <div style="flex:1;min-width:0;">
+                <div class="nm" style="font-size:16px;">Priya Nair</div>
+                <div class="em" style="margin-top:3px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6b1b1902120a45050a02192b0e130a061b070e45080406">[email&#160;protected]</a></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px;padding:0 2px 4px;">
+              <span class="chip active"><span class="dot"></span>Active</span>
+              <span class="chip gender">Female</span>
+            </div>
+            <!-- posts -->
+            <div class="sect-h">Posts <span class="count">· 8</span><span class="ln"></span><span style="font-size:14px;color:var(--ink-3);">›</span></div>
+            <div class="pcard"><div class="ptitle">Scaling the payments ledger</div><div class="line" style="width:100%;"></div><div class="line" style="width:72%;"></div></div>
+            <div class="pcard"><div class="ptitle">Notes on KYC onboarding drop-off</div><div class="line" style="width:100%;"></div><div class="line" style="width:60%;"></div></div>
+            <!-- todos -->
+            <div class="sect-h">Todos <span class="count">· 5</span><span class="ln"></span><span style="font-size:14px;color:var(--ink-3);">›</span></div>
+            <div class="trow done"><div class="tcheck on">✓</div><div class="tmeta"><div class="ttitle">Review AML thresholds</div><div class="tdue">Due Jun 12</div></div><span class="chip done"><span class="dot"></span>Done</span></div>
+            <div class="trow"><div class="tcheck"></div><div class="tmeta"><div class="ttitle">Ship card dispute flow v2</div><div class="tdue">Due Jun 18</div></div><span class="chip"><span class="dot"></span>Pending</span></div>
+          </div>
+        </div></div>
+        <div class="caption"><b>User Detail</b>header + stacked sections</div>
+      </div>
+
+      <div class="arrow">
+        <svg viewBox="0 0 54 24"><path d="M2 12 H46" stroke="currentColor" stroke-width="2" fill="none"/><path d="M40 5 L50 12 L40 19" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="lbl">tap a<br>post</span>
+      </div>
+
+      <!-- Post Detail + comments -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="chev">‹</span><span class="ttl" style="font-size:14px;">Post</span></div>
+          <div class="body tight" style="overflow:hidden;">
+            <div class="ptitle" style="font-size:15px;padding:2px;">Scaling the payments ledger</div>
+            <div style="display:flex;align-items:center;gap:7px;padding:0 2px;"><div class="avatar sm">PN</div><span class="em">Priya Nair</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:6px 2px;">
+              <div class="line" style="width:100%;"></div><div class="line" style="width:96%;"></div><div class="line" style="width:100%;"></div><div class="line" style="width:64%;"></div>
+            </div>
+            <div class="sect-h">Comments <span class="count">· 3</span><span class="ln"></span></div>
+            <div class="ccard"><div class="avatar sm">MR</div><div class="cmeta"><div class="nm" style="font-size:12px;">Maya Reed</div><div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="94f9f5edf5bae6f1f1f0d4f1ecf5f9e4f8f1baf7fbf9">[email&#160;protected]</a></div><div class="line" style="width:92%;margin-top:2px;"></div><div class="line" style="width:70%;"></div></div></div>
+            <div class="ccard"><div class="avatar sm">DP</div><div class="cmeta"><div class="nm" style="font-size:12px;">Devon Pierce</div><div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="600405160f0e4e100905120305200518010d100c054e030f0d">[email&#160;protected]</a></div><div class="line" style="width:88%;margin-top:2px;"></div></div></div>
+          </div>
+        </div></div>
+        <div class="caption"><b>Post Detail + Comments</b>full body, then comment list</div>
+      </div>
+
+      <div class="arrow">
+        <svg viewBox="0 0 54 24"><path d="M2 12 H46" stroke="currentColor" stroke-width="2" fill="none"/><path d="M40 5 L50 12 L40 19" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="lbl">comments<br>loading</span>
+      </div>
+
+      <!-- Comments loading + states -->
+      <div class="unit">
+        <div class="phone"><div class="screen">
+          <div class="notch"></div>
+          <div class="statusbar"><span>9:41</span><span>● ▮▮</span></div>
+          <div class="appbar"><span class="chev">‹</span><span class="ttl" style="font-size:14px;">Post</span></div>
+          <div class="body tight" style="overflow:hidden;">
+            <div class="ptitle" style="font-size:15px;padding:2px;">Scaling the payments ledger</div>
+            <div style="display:flex;align-items:center;gap:7px;padding:0 2px;"><div class="avatar sm">PN</div><span class="em">Priya Nair</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:6px 2px;">
+              <div class="line" style="width:100%;"></div><div class="line" style="width:96%;"></div><div class="line" style="width:58%;"></div>
+            </div>
+            <div class="sect-h">Comments<span class="ln"></span></div>
+            <div class="skel-row"><div class="skel circ" style="width:28px;height:28px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;"><div class="skel" style="height:9px;width:50%;"></div><div class="skel" style="height:8px;width:90%;"></div><div class="skel" style="height:8px;width:70%;"></div></div></div>
+            <div class="skel-row"><div class="skel circ" style="width:28px;height:28px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;"><div class="skel" style="height:9px;width:44%;"></div><div class="skel" style="height:8px;width:80%;"></div></div></div>
+          </div>
+        </div></div>
+        <div class="caption"><b>Comments — loading</b>shimmer within post</div>
+      </div>
+
+      <div class="note-card" style="align-self:center;">
+        <div class="nt">Flow notes</div>
+        <ul>
+          <li>One scroll for the profile — no tabs to lose state between.</li>
+          <li>Section headers (Posts · 8 / Todos · 5) double as “see all” affordances via the › chevron.</li>
+          <li>Comments shimmer independently — the post body shows instantly while comments fetch.</li>
+          <li>“No comments yet” + comment error reuse the same centred state block from §01.</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== Section 03 — iPad master-detail ===== -->
+  <section class="section">
+    <div class="sec-head"><span class="sec-num">03</span><h2>iPad / Tablet · 2-pane master–detail</h2></div>
+    <p class="sec-sub">Not a stretched phone. The list stays persistent on the left; selecting a user updates the right detail pane in place (selected row highlighted) rather than pushing a full-screen page. Portrait keeps the same model with a narrower list.</p>
+    <div class="row">
+
+      <!-- Landscape -->
+      <div class="unit">
+        <div class="ipad land"><div class="screen">
+          <!-- list pane -->
+          <div class="pane list">
+            <div class="appbar"><span class="ttl">Users</span><span class="sub">24</span><span class="spacer"></span><span class="icon-btn">⟳</span></div>
+            <div class="body tight" style="overflow:hidden;">
+              <div class="filterbar"><span class="seg on">All</span><span class="seg">Active</span><span class="seg">Inactive</span></div>
+              <div class="urow"><div class="avatar sm">AS</div><div class="meta"><span class="nm" style="font-size:12.5px;">Aarav Sharma</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cfaeaebdaeb9e1bca7aebda2ae8faab7aea2bfa3aae1aca0a2">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span></span></div>
+              <div class="urow sel"><div class="avatar sm">PN</div><div class="meta"><span class="nm" style="font-size:12.5px;">Priya Nair</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0474766d7d652a6a656d7644617c65697468612a676b69">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span></span></div>
+              <div class="urow"><div class="avatar sm">MB</div><div class="meta"><span class="nm" style="font-size:12.5px;">Marcus Bauch</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d8b5b9aabbadabf6bab9adbbb098bda0b9b5a8b4bdf6bbb7b5">[email&#160;protected]</a></span></div><span class="chip"><span class="dot"></span></span></div>
+              <div class="urow"><div class="avatar sm">EV</div><div class="meta"><span class="nm" style="font-size:12.5px;">Elena Voss</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="71141d141f105f071e0202311409101c011d145f121e1c">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span></span></div>
+              <div class="urow"><div class="avatar sm">TL</div><div class="meta"><span class="nm" style="font-size:12.5px;">Tobias Lang</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="80f4efe2e9e1f3aeece1eee7c0e5f8e1edf0ece5aee3efed">[email&#160;protected]</a></span></div><span class="chip"><span class="dot"></span></span></div>
+              <div class="urow"><div class="avatar sm">YT</div><div class="meta"><span class="nm" style="font-size:12.5px;">Yuki Tanaka</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e79e928c8ec9938689868c86a7829f868a978b82c984888a">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span></span></div>
+            </div>
+          </div>
+          <!-- detail pane -->
+          <div class="pane detail">
+            <div class="detail-hero">
+              <div class="big-av">PN</div>
+              <div style="flex:1;">
+                <div class="nm" style="font-size:19px;">Priya Nair</div>
+                <div class="em" style="font-size:13px;margin-top:4px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="98e8eaf1e1f9b6f6f9f1ead8fde0f9f5e8f4fdb6fbf7f5">[email&#160;protected]</a></div>
+                <div style="display:flex;gap:7px;margin-top:9px;"><span class="chip active"><span class="dot"></span>Active</span><span class="chip gender">Female</span></div>
+              </div>
+            </div>
+            <div class="detail-body">
+              <div class="two-col">
+                <!-- posts col -->
+                <div style="display:flex;flex-direction:column;gap:9px;">
+                  <div class="sect-h">Posts <span class="count">· 8</span><span class="ln"></span></div>
+                  <div class="pcard"><div class="ptitle">Scaling the payments ledger</div><div class="line" style="width:100%;"></div><div class="line" style="width:80%;"></div></div>
+                  <div class="pcard"><div class="ptitle">Notes on KYC onboarding drop-off</div><div class="line" style="width:100%;"></div><div class="line" style="width:66%;"></div></div>
+                  <div class="pcard"><div class="ptitle">Refactoring the fraud rules engine</div><div class="line" style="width:90%;"></div></div>
+                </div>
+                <!-- todos col -->
+                <div style="display:flex;flex-direction:column;gap:9px;">
+                  <div class="sect-h">Todos <span class="count">· 5</span><span class="ln"></span></div>
+                  <div class="trow done"><div class="tcheck on">✓</div><div class="tmeta"><div class="ttitle">Review AML thresholds</div><div class="tdue">Due Jun 12</div></div><span class="chip done"><span class="dot"></span>Done</span></div>
+                  <div class="trow"><div class="tcheck"></div><div class="tmeta"><div class="ttitle">Ship card dispute flow v2</div><div class="tdue">Due Jun 18</div></div><span class="chip"><span class="dot"></span>Pending</span></div>
+                  <div class="trow"><div class="tcheck"></div><div class="tmeta"><div class="ttitle">Audit logging coverage</div><div class="tdue">Due Jun 20</div></div><span class="chip"><span class="dot"></span>Pending</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption"><b>Landscape — List | Detail</b>selecting updates detail in place</div>
+      </div>
+
+      <!-- Portrait -->
+      <div class="unit">
+        <div class="ipad port"><div class="screen">
+          <div class="pane list">
+            <div class="appbar"><span class="ttl" style="font-size:14px;">Users</span><span class="spacer"></span><span class="icon-btn">⟳</span></div>
+            <div class="body tight" style="overflow:hidden;">
+              <div class="urow"><div class="avatar sm">AS</div><div class="meta"><span class="nm" style="font-size:12px;">Aarav Sharma</span><span class="em">active</span></div></div>
+              <div class="urow sel"><div class="avatar sm">PN</div><div class="meta"><span class="nm" style="font-size:12px;">Priya Nair</span><span class="em">active</span></div></div>
+              <div class="urow"><div class="avatar sm">MB</div><div class="meta"><span class="nm" style="font-size:12px;">Marcus Bauch</span><span class="em">inactive</span></div></div>
+              <div class="urow"><div class="avatar sm">EV</div><div class="meta"><span class="nm" style="font-size:12px;">Elena Voss</span><span class="em">active</span></div></div>
+            </div>
+          </div>
+          <div class="pane detail">
+            <div class="detail-hero" style="padding:14px;">
+              <div class="big-av" style="width:46px;height:46px;font-size:15px;">PN</div>
+              <div style="flex:1;"><div class="nm" style="font-size:15px;">Priya Nair</div><div style="display:flex;gap:6px;margin-top:7px;"><span class="chip active"><span class="dot"></span>Active</span></div></div>
+            </div>
+            <div class="detail-body" style="padding:12px 14px;">
+              <div class="sect-h">Posts <span class="count">· 8</span><span class="ln"></span></div>
+              <div class="pcard"><div class="ptitle" style="font-size:12px;">Scaling the payments ledger</div><div class="line" style="width:90%;"></div></div>
+              <div class="pcard"><div class="ptitle" style="font-size:12px;">Notes on KYC onboarding</div><div class="line" style="width:70%;"></div></div>
+              <div class="sect-h">Todos <span class="count">· 5</span><span class="ln"></span></div>
+              <div class="trow done"><div class="tcheck on">✓</div><div class="tmeta"><div class="ttitle">Review AML thresholds</div></div></div>
+              <div class="trow"><div class="tcheck"></div><div class="tmeta"><div class="ttitle">Ship card dispute v2</div></div></div>
+            </div>
+          </div>
+        </div></div>
+        <div class="caption"><b>Portrait</b>narrower list, same model</div>
+      </div>
+
+      <div class="note-card">
+        <div class="nt">Adaptive rules</div>
+        <ul>
+          <li>List width fixed (~320pt) so line length in the detail pane stays readable.</li>
+          <li>Selected row uses the amber keyline + tint — never relies on colour alone.</li>
+          <li>Posts &amp; Todos go side-by-side on the wide pane; they stack on phone &amp; portrait.</li>
+          <li>Tapping a post can open Post Detail as a third pane later, or a sheet over the detail — flagged for §02 depth decision.</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== Section 04 — Components ===== -->
+  <section class="section">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Reusable components &amp; states</h2></div>
+    <p class="sec-sub">The kit that builds every screen above. These carry straight into the hi-fi pass — only colour, type and elevation get added.</p>
+    <div class="specs">
+
+      <div class="spec">
+        <div class="sp-ttl">User row</div>
+        <div class="sp-demo"><div class="urow"><div class="avatar sm">EV</div><div class="meta"><span class="nm" style="font-size:12.5px;">Elena Voss</span><span class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7b1e171e151a550d1408083b1e031a160b171e55181416">[email&#160;protected]</a></span></div><span class="chip active"><span class="dot"></span>Active</span></div></div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Status chips</div>
+        <div class="sp-demo" style="flex-direction:row;flex-wrap:wrap;gap:7px;">
+          <span class="chip active"><span class="dot"></span>Active</span>
+          <span class="chip"><span class="dot"></span>Inactive</span>
+          <span class="chip done"><span class="dot"></span>Done</span>
+          <span class="chip"><span class="dot"></span>Pending</span>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Todo row</div>
+        <div class="sp-demo">
+          <div class="trow done"><div class="tcheck on">✓</div><div class="tmeta"><div class="ttitle">Review AML thresholds</div><div class="tdue">Due Jun 12</div></div></div>
+          <div class="trow"><div class="tcheck"></div><div class="tmeta"><div class="ttitle">Ship dispute flow</div><div class="tdue">Due Jun 18</div></div></div>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Post preview card</div>
+        <div class="sp-demo"><div class="pcard"><div class="ptitle" style="font-size:12px;">Scaling the payments ledger</div><div class="line" style="width:100%;"></div><div class="line" style="width:62%;"></div></div></div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Comment card</div>
+        <div class="sp-demo"><div class="ccard"><div class="avatar sm">MR</div><div class="cmeta"><div class="nm" style="font-size:12px;">Maya Reed</div><div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c8a5a9b1a9e6baadadac88adb0a9a5b8a4ade6aba7a5">[email&#160;protected]</a></div><div class="line" style="width:90%;margin-top:2px;"></div></div></div></div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Shimmer placeholder</div>
+        <div class="sp-demo"><div class="skel-row"><div class="skel circ" style="width:28px;height:28px;flex:0 0 auto;"></div><div style="flex:1;display:flex;flex-direction:column;gap:6px;"><div class="skel" style="height:9px;width:60%;"></div><div class="skel" style="height:8px;width:88%;"></div></div></div></div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Empty state block</div>
+        <div class="sp-demo" style="align-items:center;text-align:center;gap:9px;padding:6px 0;">
+          <div class="ph-icon" style="width:46px;height:46px;font-size:20px;">◍</div>
+          <div class="st-ttl" style="font-size:12.5px;">Nothing here yet</div>
+          <button class="btn ghost" style="height:30px;font-size:11px;">Action</button>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Error / retry block</div>
+        <div class="sp-demo" style="align-items:center;text-align:center;gap:9px;padding:6px 0;">
+          <div class="ph-icon" style="width:46px;height:46px;font-size:20px;">⚠</div>
+          <div class="st-ttl" style="font-size:12.5px;">Something went wrong</div>
+          <button class="btn" style="height:30px;font-size:11px;">Retry</button>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="sp-ttl">Filter segmented control</div>
+        <div class="sp-demo"><div class="filterbar"><span class="seg on">All</span><span class="seg">Active</span><span class="seg">Inactive</span></div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- footer note -->
+  <div style="margin-top:80px;max-width:760px;">
+    <div class="note bend" style="font-size:22px;">Next once structure lands → hi-fi light + dark using the Mindera Fintech tokens, real elevation &amp; motion, and a clickable prototype. ✎</div>
+  </div>
+
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>
