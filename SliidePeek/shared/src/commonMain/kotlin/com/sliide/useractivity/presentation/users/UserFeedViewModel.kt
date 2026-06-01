@@ -2,23 +2,34 @@ package com.sliide.useractivity.presentation.users
 
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
+import com.sliide.useractivity.domain.model.CreateUserRequest
+import com.sliide.useractivity.domain.model.UserGender
+import com.sliide.useractivity.domain.model.UserStatus
 import com.sliide.useractivity.domain.time.AppClock
 import com.sliide.useractivity.domain.time.RelativeTimeFormatter
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class UserFeedViewModel(
     private val loadUserFeed: LoadUserFeedUseCase,
+    private val createUser: CreateUserUseCase,
     private val scope: CoroutineScope,
     private val clock: AppClock,
     private val relativeTimeFormatter: RelativeTimeFormatter = RelativeTimeFormatter(),
+    private val addUserFormValidator: AddUserFormValidator = AddUserFormValidator(),
 ) {
     private val _state = MutableStateFlow(UserFeedState())
     val state: StateFlow<UserFeedState> = _state.asStateFlow()
+
+    private val eventsChannel = Channel<UserFeedEvent>(capacity = Channel.BUFFERED)
+    val events: Flow<UserFeedEvent> = eventsChannel.receiveAsFlow()
 
     fun load() {
         val current = _state.value
@@ -36,6 +47,93 @@ class UserFeedViewModel(
         val current = _state.value
         if (current.isLoading || current.isRefreshing) return
         loadInternal(isRefresh = current.users.isNotEmpty())
+    }
+
+    fun openAddUser() {
+        _state.update { current ->
+            current.copy(
+                isAddUserVisible = true,
+                addUserForm = addUserFormValidator.validate(current.addUserForm.copy(submitErrorMessage = null)),
+            )
+        }
+    }
+
+    fun dismissAddUser() {
+        if (_state.value.addUserForm.isSubmitting) return
+        _state.update { current ->
+            current.copy(
+                isAddUserVisible = false,
+                addUserForm = AddUserFormState(),
+            )
+        }
+    }
+
+    fun onAddUserNameChanged(value: String) {
+        updateAddUserForm { it.copy(name = value, submitErrorMessage = null) }
+    }
+
+    fun onAddUserEmailChanged(value: String) {
+        updateAddUserForm { it.copy(email = value, submitErrorMessage = null) }
+    }
+
+    fun onAddUserGenderSelected(gender: UserGender) {
+        updateAddUserForm { it.copy(gender = gender, submitErrorMessage = null) }
+    }
+
+    fun onAddUserStatusSelected(status: UserStatus) {
+        updateAddUserForm { it.copy(status = status, submitErrorMessage = null) }
+    }
+
+    fun submitAddUser() {
+        val form = addUserFormValidator.validate(_state.value.addUserForm)
+        if (!form.isSubmitEnabled) {
+            _state.update { it.copy(addUserForm = form) }
+            return
+        }
+
+        scope.launch {
+            _state.update { current ->
+                current.copy(addUserForm = form.copy(isSubmitting = true, submitErrorMessage = null))
+            }
+
+            val request = CreateUserRequest(
+                name = form.name.trim(),
+                email = form.email.trim(),
+                gender = form.gender,
+                status = form.status,
+            )
+            when (val result = createUser(request)) {
+                is AppResult.Success -> handleCreateUserSuccess(result.value)
+                is AppResult.Failure -> _state.update { current ->
+                    current.copy(
+                        addUserForm = current.addUserForm.copy(
+                            isSubmitting = false,
+                            submitErrorMessage = result.error.toCreateUserMessage(),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    private fun updateAddUserForm(transform: (AddUserFormState) -> AddUserFormState) {
+        _state.update { current ->
+            current.copy(addUserForm = addUserFormValidator.validate(transform(current.addUserForm)))
+        }
+    }
+
+    private suspend fun handleCreateUserSuccess(user: UserFeedItem) {
+        _state.update { current ->
+            current.copy(
+                users = listOf(user) + current.users.filterNot { it.id == user.id },
+                isAddUserVisible = false,
+                addUserForm = AddUserFormState(),
+                highlightedUserId = user.id,
+                errorMessage = null,
+                offlineMessage = null,
+            )
+        }
+        eventsChannel.send(UserFeedEvent.ShowMessage("${user.name} added"))
     }
 
     private fun loadInternal(isRefresh: Boolean) {
@@ -85,6 +183,16 @@ class UserFeedViewModel(
     )
 
     private fun AppError.isOfflineError(): Boolean = this is AppError.Network || this is AppError.Timeout
+
+    private fun AppError.toCreateUserMessage(): String = when (this) {
+        AppError.Network -> "No internet connection. Try again when you are back online."
+        AppError.Timeout -> "The connection timed out. Please try again."
+        AppError.Unauthorized -> "GoREST API token required to add users. Add it locally and rebuild."
+        AppError.NotFound -> "Users could not be found."
+        is AppError.Validation -> message ?: "Check the form details and try again."
+        is AppError.Server -> "The service is unavailable right now. Please try again."
+        is AppError.Unknown -> message ?: "Couldn’t add user. Please try again."
+    }
 
     private fun AppError.toUserMessage(): String = when (this) {
         AppError.Network -> "No internet connection. Try again when you are back online."

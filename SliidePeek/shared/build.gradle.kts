@@ -1,4 +1,74 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val generatedBuildSecretsDir = layout.buildDirectory.dir("generated/build-secrets/commonMain/kotlin")
+
+val generateBuildSecrets by tasks.registering {
+    notCompatibleWithConfigurationCache("Reads local secret files at execution time")
+    val outputDir = generatedBuildSecretsDir
+    val tokenInput = findGorestToken()
+    inputs.property("gorestTokenHash", tokenInput.hashCode())
+    outputs.dir(outputDir)
+
+    doLast {
+        val token = tokenInput
+        val packageDir = outputDir.get().dir("com/sliide/useractivity/config").asFile
+        packageDir.mkdirs()
+        packageDir.resolve("BuildSecrets.kt").writeText(
+            """
+            package com.sliide.useractivity.config
+
+            internal object BuildSecrets {
+                const val gorestToken: String = ${token.toKotlinStringLiteral()}
+            }
+            """.trimIndent() + "\n",
+        )
+    }
+}
+
+fun findGorestToken(): String =
+    System.getenv("GOREST_TOKEN")?.takeIf { it.isNotBlank() }
+        ?: propertiesToken(layout.projectDirectory.file("../local.properties").asFile)
+        ?: envFileToken(layout.projectDirectory.file("../.env").asFile)
+        ?: ""
+
+fun propertiesToken(file: File): String? {
+    if (!file.isFile) return null
+    return file.inputStream().use { input ->
+        Properties().apply { load(input) }
+    }.getProperty("gorest.token")?.takeIf { it.isNotBlank() }
+}
+
+fun envFileToken(file: File): String? {
+    if (!file.isFile) return null
+    return file.readLines()
+        .asSequence()
+        .map { it.trim() }
+        .filter { it.isNotBlank() && !it.startsWith("#") }
+        .mapNotNull { line ->
+            val separator = line.indexOf('=')
+            if (separator <= 0) return@mapNotNull null
+            val key = line.substring(0, separator).trim()
+            val value = line.substring(separator + 1).trim().trim('"', '\'')
+            if (key == "GOREST_TOKEN" || key == "gorest.token") value.takeIf { it.isNotBlank() } else null
+        }
+        .firstOrNull()
+}
+
+fun String.toKotlinStringLiteral(): String = buildString {
+    append('"')
+    this@toKotlinStringLiteral.forEach { char ->
+        when (char) {
+            '\\' -> append("\\\\")
+            '"' -> append("\\\"")
+            '\n' -> append("\\n")
+            '\r' -> append("\\r")
+            '\t' -> append("\\t")
+            else -> append(char)
+        }
+    }
+    append('"')
+}
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -38,6 +108,9 @@ kotlin {
     }
     
     sourceSets {
+        commonMain {
+            kotlin.srcDir(generatedBuildSecretsDir)
+        }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.compose.uiToolingPreview)
@@ -78,6 +151,10 @@ sqldelight {
             packageName.set("com.sliide.useractivity.data.local")
         }
     }
+}
+
+tasks.matching { it.name.startsWith("compile") || it.name.contains("Kotlin") }.configureEach {
+    dependsOn(generateBuildSecrets)
 }
 
 dependencies {

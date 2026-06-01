@@ -2,6 +2,7 @@ package com.sliide.useractivity.presentation.users
 
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
+import com.sliide.useractivity.domain.model.CreateUserRequest
 import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.domain.model.UserStatus
 import com.sliide.useractivity.domain.time.AppClock
@@ -165,11 +166,98 @@ class UserFeedViewModelTest {
         assertEquals(listOf(2L), viewModel.state.value.users.map { it.id })
     }
 
+    @Test
+    fun `opening and dismissing add user toggles form visibility`() = runTest {
+        val viewModel = viewModel(FakeLoadUserFeedUseCase())
+
+        viewModel.openAddUser()
+        assertTrue(viewModel.state.value.isAddUserVisible)
+
+        viewModel.dismissAddUser()
+        assertFalse(viewModel.state.value.isAddUserVisible)
+    }
+
+    @Test
+    fun `add user validation updates as fields change`() = runTest {
+        val viewModel = viewModel(FakeLoadUserFeedUseCase())
+
+        viewModel.openAddUser()
+        viewModel.onAddUserNameChanged("Maya Reed")
+        viewModel.onAddUserEmailChanged("maya.reed@example.com")
+
+        val form = viewModel.state.value.addUserForm
+        assertEquals(null, form.nameError)
+        assertEquals(null, form.emailError)
+        assertTrue(form.isSubmitEnabled)
+    }
+
+    @Test
+    fun `invalid add user form blocks submit`() = runTest {
+        val createUser = FakeCreateUserUseCase(AppResult.Success(feedUser(99)))
+        val viewModel = viewModel(FakeLoadUserFeedUseCase(), createUser = createUser)
+
+        viewModel.openAddUser()
+        viewModel.submitAddUser()
+        advanceUntilIdle()
+
+        assertEquals(0, createUser.requests.size)
+        assertEquals("Name is required", viewModel.state.value.addUserForm.nameError)
+    }
+
+    @Test
+    fun `submit add user shows loading then inserts created user at top`() = runTest {
+        val pending = CompletableDeferred<AppResult<UserFeedItem>>()
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Success(feedResult(listOf(feedUser(1)))))),
+            createUser = FakeCreateUserUseCase(pending = pending),
+        )
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.openAddUser()
+        viewModel.onAddUserNameChanged("Maya Reed")
+        viewModel.onAddUserEmailChanged("maya.reed@example.com")
+
+        viewModel.submitAddUser()
+        runCurrent()
+
+        assertTrue(viewModel.state.value.addUserForm.isSubmitting)
+
+        pending.complete(AppResult.Success(feedUser(99)))
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertFalse(state.isAddUserVisible)
+        assertEquals(listOf(99L, 1L), state.users.map { it.id })
+        assertEquals(99L, state.highlightedUserId)
+    }
+
+    @Test
+    fun `submit add user failure keeps input and shows submit error`() = runTest {
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(),
+            createUser = FakeCreateUserUseCase(AppResult.Failure(AppError.Unauthorized)),
+        )
+        viewModel.openAddUser()
+        viewModel.onAddUserNameChanged("Maya Reed")
+        viewModel.onAddUserEmailChanged("maya.reed@example.com")
+
+        viewModel.submitAddUser()
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertTrue(state.isAddUserVisible)
+        assertEquals("Maya Reed", state.addUserForm.name)
+        assertFalse(state.addUserForm.isSubmitting)
+        assertEquals("GoREST API token required to add users. Add it locally and rebuild.", state.addUserForm.submitErrorMessage)
+    }
+
     private fun TestScope.viewModel(
         loadUserFeedUseCase: LoadUserFeedUseCase,
+        createUser: CreateUserUseCase = FakeCreateUserUseCase(AppResult.Failure(AppError.Unauthorized)),
         nowMillis: Long = 1_000,
     ): UserFeedViewModel = UserFeedViewModel(
         loadUserFeed = loadUserFeedUseCase,
+        createUser = createUser,
         scope = this,
         clock = FixedClock(nowMillis),
     )
@@ -180,6 +268,18 @@ class UserFeedViewModelTest {
     ) : LoadUserFeedUseCase {
         override suspend fun invoke(): AppResult<UserFeedResult> =
             if (results.isNotEmpty()) results.removeAt(0) else pending!!.await()
+    }
+
+    private class FakeCreateUserUseCase(
+        private val result: AppResult<UserFeedItem>? = null,
+        private val pending: CompletableDeferred<AppResult<UserFeedItem>>? = null,
+    ) : CreateUserUseCase {
+        val requests = mutableListOf<CreateUserRequest>()
+
+        override suspend fun invoke(request: CreateUserRequest): AppResult<UserFeedItem> {
+            requests += request
+            return result ?: pending!!.await()
+        }
     }
 
     private class FixedClock(private val nowMillis: Long) : AppClock {

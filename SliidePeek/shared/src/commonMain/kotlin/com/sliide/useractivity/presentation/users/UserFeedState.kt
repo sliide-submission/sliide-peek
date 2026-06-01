@@ -8,6 +8,9 @@ data class UserFeedState(
     val offlineMessage: String? = null,
     val lastUpdatedLabel: String? = null,
     val canRetry: Boolean = false,
+    val isAddUserVisible: Boolean = false,
+    val addUserForm: AddUserFormState = AddUserFormState(),
+    val highlightedUserId: Long? = null,
 ) {
     val isEmpty: Boolean = !isLoading && users.isEmpty() && errorMessage == null && offlineMessage == null
     val isOffline: Boolean = offlineMessage != null

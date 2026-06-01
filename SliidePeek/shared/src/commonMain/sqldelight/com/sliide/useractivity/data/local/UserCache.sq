@@ -56,3 +56,11 @@ VALUES (?, ?, ?, ?, ?);
 deleteUserById:
 DELETE FROM cached_user_feed
 WHERE id = ?;
+
+incrementFeedPositions:
+UPDATE cached_user_feed
+SET position = position + 1;
+
+trimFeedToLimit:
+DELETE FROM cached_user_feed
+WHERE position >= ?;

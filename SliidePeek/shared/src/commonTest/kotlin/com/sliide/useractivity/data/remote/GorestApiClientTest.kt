@@ -1,9 +1,11 @@
 package com.sliide.useractivity.data.remote
 
+import com.sliide.useractivity.data.remote.dto.CreateUserRequestDTO
 import com.sliide.useractivity.test.Fixtures
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.toByteArray
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -12,6 +14,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class GorestApiClientTest {
     @Test
@@ -38,6 +41,47 @@ class GorestApiClientTest {
 
         assertEquals(8484086, user.id)
         assertEquals("Bhargava Adiga", user.name)
+    }
+
+    @Test
+    fun `creates user with bearer token and parses response`() = runTest {
+        var capturedPath: String? = null
+        var capturedAuthorization: String? = null
+        var capturedBody: String? = null
+        val apiClient = GorestApiClient(
+            httpClient = HttpClient(MockEngine) {
+                expectSuccess = true
+                engine {
+                    addHandler { request ->
+                        capturedPath = request.url.encodedPath
+                        capturedAuthorization = request.headers[HttpHeaders.Authorization]
+                        capturedBody = request.body.toByteArray().decodeToString()
+                        respond(
+                            """{"id":99,"name":"Maya Reed","email":"maya.reed@example.com","gender":"female","status":"active"}""",
+                            HttpStatusCode.Created,
+                            jsonHeaders(),
+                        )
+                    }
+                }
+                install(ContentNegotiation) { json(gorestJson) }
+            },
+            baseUrl = "https://example.test/public/v2",
+        )
+
+        val user = apiClient.createUser(
+            request = CreateUserRequestDTO(
+                name = "Maya Reed",
+                email = "maya.reed@example.com",
+                gender = "female",
+                status = "active",
+            ),
+            bearerToken = "test-token",
+        )
+
+        assertEquals(99, user.id)
+        assertEquals("/public/v2/users", capturedPath)
+        assertEquals("Bearer test-token", capturedAuthorization)
+        assertTrue(capturedBody!!.contains("\"email\":\"maya.reed@example.com\""))
     }
 
     @Test

@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.sliide.useractivity.domain.model.UserGender
+import com.sliide.useractivity.domain.model.UserStatus
 import com.sliide.useractivity.presentation.users.UserFeedState
 import com.sliide.useractivity.ui.components.AppTopBar
 import com.sliide.useractivity.ui.navigation.AppNavigator
@@ -27,6 +29,12 @@ fun ExpandedAppShell(
     onUserFeedRefresh: () -> Unit,
     onUserFeedRetry: () -> Unit,
     onAddUserClick: () -> Unit,
+    onDismissAddUser: () -> Unit,
+    onAddUserNameChanged: (String) -> Unit,
+    onAddUserEmailChanged: (String) -> Unit,
+    onAddUserGenderSelected: (UserGender) -> Unit,
+    onAddUserStatusSelected: (UserStatus) -> Unit,
+    onSubmitAddUser: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AppScaffold(modifier = modifier) {
@@ -62,7 +70,15 @@ fun ExpandedAppShell(
                 val selectedUser = userFeedState.users.firstOrNull { it.id == navigator.selectedUserId }
                 UserActionPanel(
                     user = selectedUser,
+                    addUserForm = userFeedState.addUserForm,
+                    isAddUserVisible = userFeedState.isAddUserVisible,
                     onAddUserClick = onAddUserClick,
+                    onDismissAddUser = onDismissAddUser,
+                    onAddUserNameChanged = onAddUserNameChanged,
+                    onAddUserEmailChanged = onAddUserEmailChanged,
+                    onAddUserGenderSelected = onAddUserGenderSelected,
+                    onAddUserStatusSelected = onAddUserStatusSelected,
+                    onSubmitAddUser = onSubmitAddUser,
                     onDeleteUserClick = {},
                     modifier = Modifier.fillMaxSize(),
                 )

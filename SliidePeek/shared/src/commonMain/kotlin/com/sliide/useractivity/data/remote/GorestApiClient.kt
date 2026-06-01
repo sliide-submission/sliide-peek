@@ -1,15 +1,22 @@
 package com.sliide.useractivity.data.remote
 
 import com.sliide.useractivity.data.remote.dto.CommentDTO
+import com.sliide.useractivity.data.remote.dto.CreateUserRequestDTO
 import com.sliide.useractivity.data.remote.dto.PostDTO
 import com.sliide.useractivity.data.remote.dto.TodoDTO
 import com.sliide.useractivity.data.remote.dto.UserDTO
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.appendPathSegments
+import io.ktor.http.contentType
 
 internal class GorestApiClient(
     private val httpClient: HttpClient,
@@ -31,6 +38,13 @@ internal class GorestApiClient(
 
     suspend fun getUser(id: Long): UserDTO = httpClient.get(baseUrl) {
         url { appendPathSegments("users", id.toString()) }
+    }.body()
+
+    suspend fun createUser(request: CreateUserRequestDTO, bearerToken: String): UserDTO = httpClient.post(baseUrl) {
+        url { appendPathSegments("users") }
+        contentType(ContentType.Application.Json)
+        header(HttpHeaders.Authorization, "Bearer $bearerToken")
+        setBody(request)
     }.body()
 
     suspend fun getUserPosts(userId: Long): List<PostDTO> = httpClient.get(baseUrl) {

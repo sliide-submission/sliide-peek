@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sliide.useractivity.domain.model.UserGender
+import com.sliide.useractivity.presentation.users.AddUserFormState
 import com.sliide.useractivity.domain.model.UserStatus
 import com.sliide.useractivity.presentation.users.UserFeedItem
 import com.sliide.useractivity.ui.components.ContentState
@@ -28,10 +29,35 @@ import com.sliide.useractivity.ui.shell.appBodyPaddingValues
 @Composable
 fun UserActionPanel(
     user: UserFeedItem?,
+    addUserForm: AddUserFormState,
+    isAddUserVisible: Boolean,
     onAddUserClick: () -> Unit,
+    onDismissAddUser: () -> Unit,
+    onAddUserNameChanged: (String) -> Unit,
+    onAddUserEmailChanged: (String) -> Unit,
+    onAddUserGenderSelected: (UserGender) -> Unit,
+    onAddUserStatusSelected: (UserStatus) -> Unit,
+    onSubmitAddUser: () -> Unit,
     onDeleteUserClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    if (isAddUserVisible) {
+        AddUserForm(
+            state = addUserForm,
+            onNameChanged = onAddUserNameChanged,
+            onEmailChanged = onAddUserEmailChanged,
+            onGenderSelected = onAddUserGenderSelected,
+            onStatusSelected = onAddUserStatusSelected,
+            onSubmit = onSubmitAddUser,
+            onCancel = onDismissAddUser,
+            expanded = true,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(appBodyPaddingValues()),
+        )
+        return
+    }
+
     if (user == null) {
         ContentStateContainer(
             modifier = modifier,

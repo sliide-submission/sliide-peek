@@ -11,4 +11,10 @@ interface UserCacheDataSource {
     )
 
     suspend fun getLastPageFeed(): CachedUserFeed?
+
+    suspend fun insertCreatedUserAtTop(
+        user: User,
+        createdAtMillis: Long,
+        cachedAtMillis: Long,
+    )
 }

@@ -4,6 +4,7 @@ import com.sliide.useractivity.data.local.CachedUserFeed
 import com.sliide.useractivity.data.local.UserCacheDataSource
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
+import com.sliide.useractivity.domain.model.CreateUserRequest
 import com.sliide.useractivity.domain.model.Page
 import com.sliide.useractivity.domain.model.Post
 import com.sliide.useractivity.domain.model.Todo
@@ -123,6 +124,8 @@ class GetSmartUserFeedUseCaseTest {
         }
 
         override suspend fun getLastPageFeed(): CachedUserFeed? = cachedFeed
+
+        override suspend fun insertCreatedUserAtTop(user: User, createdAtMillis: Long, cachedAtMillis: Long) = Unit
     }
 
     private class FakeUserRepository(
@@ -137,6 +140,7 @@ class GetSmartUserFeedUseCaseTest {
             return AppResult.Success(pages.getValue(page))
         }
 
+        override suspend fun createUser(request: CreateUserRequest): AppResult<User> = error("Not needed")
         override suspend fun getUser(id: Long): AppResult<User> = error("Not needed")
         override suspend fun getUserPosts(userId: Long): AppResult<List<Post>> = error("Not needed")
         override suspend fun getUserTodos(userId: Long): AppResult<List<Todo>> = error("Not needed")
