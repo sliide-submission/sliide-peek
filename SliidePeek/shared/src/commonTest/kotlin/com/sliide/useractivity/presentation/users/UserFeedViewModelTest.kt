@@ -4,10 +4,12 @@ import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
 import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.domain.model.UserStatus
+import com.sliide.useractivity.domain.time.AppClock
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,7 +20,7 @@ import kotlin.test.assertTrue
 class UserFeedViewModelTest {
     @Test
     fun `initial state is empty and idle`() = runTest {
-        val viewModel = UserFeedViewModel(FakeLoadUserFeedUseCase(), this)
+        val viewModel = viewModel(FakeLoadUserFeedUseCase())
 
         val state = viewModel.state.value
 
@@ -29,15 +31,15 @@ class UserFeedViewModelTest {
 
     @Test
     fun `load emits loading then success`() = runTest {
-        val pending = CompletableDeferred<AppResult<List<UserFeedItem>>>()
-        val viewModel = UserFeedViewModel(FakeLoadUserFeedUseCase(pending = pending), this)
+        val pending = CompletableDeferred<AppResult<UserFeedResult>>()
+        val viewModel = viewModel(FakeLoadUserFeedUseCase(pending = pending))
 
         viewModel.load()
         runCurrent()
 
         assertTrue(viewModel.state.value.isLoading)
 
-        pending.complete(AppResult.Success(listOf(feedUser(1))))
+        pending.complete(AppResult.Success(feedResult(listOf(feedUser(1)), lastUpdatedMillis = 1_000)))
         advanceUntilIdle()
 
         val state = viewModel.state.value
@@ -50,9 +52,8 @@ class UserFeedViewModelTest {
 
     @Test
     fun `empty success produces empty non-error state`() = runTest {
-        val viewModel = UserFeedViewModel(
-            FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Success(emptyList()))),
-            this,
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Success(feedResult(emptyList())))),
         )
 
         viewModel.load()
@@ -65,10 +66,37 @@ class UserFeedViewModelTest {
     }
 
     @Test
+    fun `cached success produces offline cached state`() = runTest {
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(
+                results = mutableListOf(
+                    AppResult.Success(
+                        feedResult(
+                            users = listOf(feedUser(1)),
+                            fromCache = true,
+                            lastUpdatedMillis = 30_000,
+                        ),
+                    ),
+                ),
+            ),
+            nowMillis = 90_000,
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+
+        val state = viewModel.state.value
+        assertEquals(listOf(1L), state.users.map { it.id })
+        assertTrue(state.isOffline)
+        assertTrue(state.canRetry)
+        assertEquals("1 min ago", state.lastUpdatedLabel)
+        assertEquals(null, state.errorMessage)
+    }
+
+    @Test
     fun `network failure with no users produces offline retry state`() = runTest {
-        val viewModel = UserFeedViewModel(
+        val viewModel = viewModel(
             FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Failure(AppError.Network))),
-            this,
         )
 
         viewModel.load()
@@ -83,13 +111,12 @@ class UserFeedViewModelTest {
 
     @Test
     fun `refresh failure keeps existing users visible and records offline state`() = runTest {
-        val refreshResult = CompletableDeferred<AppResult<List<UserFeedItem>>>()
-        val viewModel = UserFeedViewModel(
+        val refreshResult = CompletableDeferred<AppResult<UserFeedResult>>()
+        val viewModel = viewModel(
             FakeLoadUserFeedUseCase(
-                results = mutableListOf(AppResult.Success(listOf(feedUser(1)))),
+                results = mutableListOf(AppResult.Success(feedResult(listOf(feedUser(1)), lastUpdatedMillis = 1_000))),
                 pending = refreshResult,
             ),
-            this,
         )
 
         viewModel.load()
@@ -113,12 +140,12 @@ class UserFeedViewModelTest {
 
     @Test
     fun `retry clears previous error before attempting again`() = runTest {
-        val pending = CompletableDeferred<AppResult<List<UserFeedItem>>>()
+        val pending = CompletableDeferred<AppResult<UserFeedResult>>()
         val useCase = FakeLoadUserFeedUseCase(
             results = mutableListOf(AppResult.Failure(AppError.Server(500))),
             pending = pending,
         )
-        val viewModel = UserFeedViewModel(useCase, this)
+        val viewModel = viewModel(useCase)
 
         viewModel.load()
         advanceUntilIdle()
@@ -132,19 +159,42 @@ class UserFeedViewModelTest {
         assertEquals(null, retryingState.errorMessage)
         assertFalse(retryingState.canRetry)
 
-        pending.complete(AppResult.Success(listOf(feedUser(2))))
+        pending.complete(AppResult.Success(feedResult(listOf(feedUser(2)))))
         advanceUntilIdle()
 
         assertEquals(listOf(2L), viewModel.state.value.users.map { it.id })
     }
 
+    private fun TestScope.viewModel(
+        loadUserFeedUseCase: LoadUserFeedUseCase,
+        nowMillis: Long = 1_000,
+    ): UserFeedViewModel = UserFeedViewModel(
+        loadUserFeed = loadUserFeedUseCase,
+        scope = this,
+        clock = FixedClock(nowMillis),
+    )
+
     private class FakeLoadUserFeedUseCase(
-        private val results: MutableList<AppResult<List<UserFeedItem>>> = mutableListOf(),
-        private val pending: CompletableDeferred<AppResult<List<UserFeedItem>>>? = null,
+        private val results: MutableList<AppResult<UserFeedResult>> = mutableListOf(),
+        private val pending: CompletableDeferred<AppResult<UserFeedResult>>? = null,
     ) : LoadUserFeedUseCase {
-        override suspend fun invoke(): AppResult<List<UserFeedItem>> =
+        override suspend fun invoke(): AppResult<UserFeedResult> =
             if (results.isNotEmpty()) results.removeAt(0) else pending!!.await()
     }
+
+    private class FixedClock(private val nowMillis: Long) : AppClock {
+        override fun nowMillis(): Long = nowMillis
+    }
+
+    private fun feedResult(
+        users: List<UserFeedItem>,
+        fromCache: Boolean = false,
+        lastUpdatedMillis: Long? = users.firstOrNull()?.fetchedAtMillis,
+    ) = UserFeedResult(
+        users = users,
+        fromCache = fromCache,
+        lastUpdatedMillis = lastUpdatedMillis,
+    )
 
     private fun feedUser(id: Long) = UserFeedItem(
         id = id,

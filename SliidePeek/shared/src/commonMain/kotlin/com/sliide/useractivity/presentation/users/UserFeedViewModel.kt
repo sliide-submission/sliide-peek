@@ -2,6 +2,8 @@ package com.sliide.useractivity.presentation.users
 
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
+import com.sliide.useractivity.domain.time.AppClock
+import com.sliide.useractivity.domain.time.RelativeTimeFormatter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +14,8 @@ import kotlinx.coroutines.launch
 class UserFeedViewModel(
     private val loadUserFeed: LoadUserFeedUseCase,
     private val scope: CoroutineScope,
+    private val clock: AppClock,
+    private val relativeTimeFormatter: RelativeTimeFormatter = RelativeTimeFormatter(),
 ) {
     private val _state = MutableStateFlow(UserFeedState())
     val state: StateFlow<UserFeedState> = _state.asStateFlow()
@@ -48,14 +52,15 @@ class UserFeedViewModel(
 
             when (val result = loadUserFeed()) {
                 is AppResult.Success -> _state.update { current ->
+                    val feed = result.value
                     current.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        users = result.value,
+                        users = feed.users,
                         errorMessage = null,
-                        offlineMessage = null,
-                        lastUpdatedLabel = result.value.firstOrNull()?.relativeTimestamp,
-                        canRetry = false,
+                        offlineMessage = if (feed.fromCache) "Offline — showing cached users" else null,
+                        lastUpdatedLabel = feed.lastUpdatedMillis?.let(::formatLastUpdated),
+                        canRetry = feed.fromCache,
                     )
                 }
 
@@ -73,6 +78,11 @@ class UserFeedViewModel(
             }
         }
     }
+
+    private fun formatLastUpdated(lastUpdatedMillis: Long): String = relativeTimeFormatter.format(
+        thenMillis = lastUpdatedMillis,
+        nowMillis = clock.nowMillis(),
+    )
 
     private fun AppError.isOfflineError(): Boolean = this is AppError.Network || this is AppError.Timeout
 

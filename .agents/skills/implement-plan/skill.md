@@ -170,7 +170,8 @@ Before reporting done:
 3. Summarise files changed.
 4. Note any deviations from the plan.
 5. Update AI documentation if the plan required it.
-6. Suggest a commit message if committing was not requested.
+6. Suggest brief manual tests the user can run, when appropriate for the change.
+7. Suggest a commit message if committing was not requested.
 
 ## Final Report
 
@@ -179,6 +180,7 @@ At the end, report concisely:
 - whether it was implemented as planned or with deviations
 - files changed
 - verification commands and results
+- brief manual tests the user can run, when appropriate
 - any blocked/human steps
 - any gardener observations
 

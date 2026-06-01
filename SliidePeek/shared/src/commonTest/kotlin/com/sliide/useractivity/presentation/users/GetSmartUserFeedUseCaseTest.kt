@@ -1,5 +1,7 @@
 package com.sliide.useractivity.presentation.users
 
+import com.sliide.useractivity.data.local.CachedUserFeed
+import com.sliide.useractivity.data.local.UserCacheDataSource
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
 import com.sliide.useractivity.domain.model.Page
@@ -13,25 +15,32 @@ import com.sliide.useractivity.domain.time.AppClock
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class GetSmartUserFeedUseCaseTest {
     @Test
     fun `fetches first page then last page from pagination metadata`() = runTest {
+        val cache = FakeUserCacheDataSource()
         val repository = FakeUserRepository(
             pages = mapOf(
                 1 to Page(listOf(user(1)), page = 1, perPage = 2, totalPages = 3),
                 3 to Page(listOf(user(30), user(31)), page = 3, perPage = 2, totalPages = 3),
             ),
         )
-        val useCase = GetSmartUserFeedUseCase(repository, FixedClock(123_000), perPage = 2)
+        val useCase = GetSmartUserFeedUseCase(repository, cache, FixedClock(123_000), perPage = 2)
 
         val result = useCase()
 
-        val users = assertIs<AppResult.Success<List<UserFeedItem>>>(result).value
+        val feed = assertIs<AppResult.Success<UserFeedResult>>(result).value
         assertEquals(listOf(1, 3), repository.requestedPages)
-        assertEquals(listOf(30L, 31L), users.map { it.id })
-        assertEquals(123_000, users.first().fetchedAtMillis)
+        assertEquals(listOf(30L, 31L), feed.users.map { it.id })
+        assertEquals(123_000, feed.users.first().fetchedAtMillis)
+        assertFalse(feed.fromCache)
+        assertEquals(123_000, feed.lastUpdatedMillis)
+        assertNotNull(cache.savedFeed)
     }
 
     @Test
@@ -39,26 +48,81 @@ class GetSmartUserFeedUseCaseTest {
         val repository = FakeUserRepository(
             pages = mapOf(1 to Page(listOf(user(1)), page = 1, perPage = 20, totalPages = 1)),
         )
-        val useCase = GetSmartUserFeedUseCase(repository, FixedClock(10_000))
+        val useCase = GetSmartUserFeedUseCase(repository, FakeUserCacheDataSource(), FixedClock(10_000))
 
         val result = useCase()
 
-        assertIs<AppResult.Success<List<UserFeedItem>>>(result)
+        assertIs<AppResult.Success<UserFeedResult>>(result)
         assertEquals(listOf(1), repository.requestedPages)
     }
 
     @Test
-    fun `propagates repository failure`() = runTest {
+    fun `network failure returns cached feed when available`() = runTest {
+        val cache = FakeUserCacheDataSource(
+            cachedFeed = CachedUserFeed(
+                page = Page(listOf(user(99)), page = 4, perPage = 20, totalPages = 4),
+                cachedAtMillis = 60_000,
+                fetchedAtMillis = 50_000,
+            ),
+        )
+        val useCase = GetSmartUserFeedUseCase(
+            userRepository = FakeUserRepository(failure = AppError.Network),
+            userCacheDataSource = cache,
+            clock = FixedClock(90_000),
+        )
+
+        val result = useCase()
+
+        val feed = assertIs<AppResult.Success<UserFeedResult>>(result).value
+        assertTrue(feed.fromCache)
+        assertEquals(listOf(99L), feed.users.map { it.id })
+        assertEquals(60_000, feed.lastUpdatedMillis)
+    }
+
+    @Test
+    fun `network failure without cache propagates failure`() = runTest {
         val repository = FakeUserRepository(failure = AppError.Network)
-        val useCase = GetSmartUserFeedUseCase(repository, FixedClock(10_000))
+        val useCase = GetSmartUserFeedUseCase(repository, FakeUserCacheDataSource(), FixedClock(10_000))
 
         val result = useCase()
 
         assertEquals(AppError.Network, assertIs<AppResult.Failure>(result).error)
     }
 
+    @Test
+    fun `non-offline failure does not use cache`() = runTest {
+        val cache = FakeUserCacheDataSource(
+            cachedFeed = CachedUserFeed(
+                page = Page(listOf(user(99)), page = 1, perPage = 20, totalPages = 1),
+                cachedAtMillis = 1,
+                fetchedAtMillis = 1,
+            ),
+        )
+        val useCase = GetSmartUserFeedUseCase(
+            userRepository = FakeUserRepository(failure = AppError.Server(500)),
+            userCacheDataSource = cache,
+            clock = FixedClock(10_000),
+        )
+
+        val result = useCase()
+
+        assertEquals(AppError.Server(500), assertIs<AppResult.Failure>(result).error)
+    }
+
     private class FixedClock(private val nowMillis: Long) : AppClock {
         override fun nowMillis(): Long = nowMillis
+    }
+
+    private class FakeUserCacheDataSource(
+        private val cachedFeed: CachedUserFeed? = null,
+    ) : UserCacheDataSource {
+        var savedFeed: CachedUserFeed? = null
+
+        override suspend fun replaceLastPage(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) {
+            savedFeed = CachedUserFeed(page, cachedAtMillis, fetchedAtMillis)
+        }
+
+        override suspend fun getLastPageFeed(): CachedUserFeed? = cachedFeed
     }
 
     private class FakeUserRepository(

@@ -1,0 +1,58 @@
+CREATE TABLE cached_user_feed (
+  id INTEGER NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  gender TEXT NOT NULL,
+  status TEXT NOT NULL,
+  fetched_at_millis INTEGER NOT NULL,
+  cached_at_millis INTEGER NOT NULL,
+  position INTEGER NOT NULL
+);
+
+CREATE TABLE cached_feed_metadata (
+  cache_key TEXT NOT NULL PRIMARY KEY,
+  page INTEGER NOT NULL,
+  per_page INTEGER NOT NULL,
+  total_pages INTEGER NOT NULL,
+  cached_at_millis INTEGER NOT NULL
+);
+
+selectCachedFeed:
+SELECT *
+FROM cached_user_feed
+ORDER BY position ASC;
+
+selectMetadata:
+SELECT *
+FROM cached_feed_metadata
+WHERE cache_key = ?;
+
+clearFeed:
+DELETE FROM cached_user_feed;
+
+insertUser:
+INSERT OR REPLACE INTO cached_user_feed(
+  id,
+  name,
+  email,
+  gender,
+  status,
+  fetched_at_millis,
+  cached_at_millis,
+  position
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+replaceMetadata:
+INSERT OR REPLACE INTO cached_feed_metadata(
+  cache_key,
+  page,
+  per_page,
+  total_pages,
+  cached_at_millis
+)
+VALUES (?, ?, ?, ?, ?);
+
+deleteUserById:
+DELETE FROM cached_user_feed
+WHERE id = ?;
