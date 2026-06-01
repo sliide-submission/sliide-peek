@@ -13,25 +13,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.sliide.useractivity.presentation.users.UserFeedState
 import com.sliide.useractivity.ui.components.AppTopBar
 import com.sliide.useractivity.ui.navigation.AppNavigator
-import com.sliide.useractivity.ui.navigation.AppRoute
+import com.sliide.useractivity.ui.users.UserActionPanel
+import com.sliide.useractivity.ui.users.UserFeedScreen
 
 @Composable
 fun ExpandedAppShell(
     navigator: AppNavigator,
     availableWidth: Dp,
+    userFeedState: UserFeedState,
+    onUserFeedRefresh: () -> Unit,
+    onUserFeedRetry: () -> Unit,
+    onAddUserClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    PlatformBackHandler(enabled = navigator.canGoBack || navigator.selectedPostId != null) {
-        val selectedUserId = navigator.selectedUserId
-        if (navigator.selectedPostId != null && selectedUserId != null) {
-            navigator.selectUser(selectedUserId)
-        } else {
-            navigator.goBack()
-        }
-    }
-
     AppScaffold(modifier = modifier) {
         Row(Modifier.fillMaxSize()) {
             Surface(
@@ -44,51 +41,31 @@ fun ExpandedAppShell(
                 Column(Modifier.fillMaxSize()) {
                     AppTopBar(
                         title = "Users",
-                        subtitle = "24",
-                        onRefresh = {},
+                        subtitle = userFeedState.users.size.toString(),
+                        onAdd = onAddUserClick,
+                        onRefresh = onUserFeedRefresh,
                     )
-                    UserListPlaceholder(
+                    UserFeedScreen(
+                        state = userFeedState,
                         selectedUserId = navigator.selectedUserId,
                         onUserClick = navigator::selectUser,
-                        compactRows = availableWidth < 840.dp,
+                        onRefresh = onUserFeedRefresh,
+                        onRetry = onUserFeedRetry,
+                        onAddUserClick = onAddUserClick,
+                        showFab = false,
+                        compactRows = true,
                         modifier = Modifier.fillMaxSize(),
                     )
                 }
             }
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                val selectedUserId = navigator.selectedUserId
-                val selectedPostId = navigator.selectedPostId
-                val route = navigator.currentRoute
-                when {
-                    selectedUserId == null -> NoSelectionPlaceholder(Modifier.fillMaxSize())
-                    route is AppRoute.UserPosts -> Column(Modifier.fillMaxSize()) {
-                        AppTopBar(title = "Posts", showBack = true, onBack = { navigator.goBack() })
-                        PostsListPlaceholder(
-                            userId = route.userId,
-                            onPostClick = { _, postId -> navigator.selectPost(postId) },
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-                    route is AppRoute.UserTodos -> Column(Modifier.fillMaxSize()) {
-                        AppTopBar(title = "Todos", showBack = true, onBack = { navigator.goBack() })
-                        TodosListPlaceholder(modifier = Modifier.fillMaxSize())
-                    }
-                    selectedPostId != null -> Column(Modifier.fillMaxSize()) {
-                        AppTopBar(
-                            title = "Post",
-                            showBack = true,
-                            onBack = { navigator.selectUser(selectedUserId) },
-                        )
-                        PostDetailPlaceholder(postId = selectedPostId, modifier = Modifier.fillMaxSize())
-                    }
-                    else -> UserDetailPlaceholder(
-                        userId = selectedUserId,
-                        onPostsClick = { navigator.navigate(AppRoute.UserPosts(it)) },
-                        onTodosClick = { navigator.navigate(AppRoute.UserTodos(it)) },
-                        onPostClick = { _, postId -> navigator.selectPost(postId) },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
+                val selectedUser = userFeedState.users.firstOrNull { it.id == navigator.selectedUserId }
+                UserActionPanel(
+                    user = selectedUser,
+                    onAddUserClick = onAddUserClick,
+                    onDeleteUserClick = {},
+                    modifier = Modifier.fillMaxSize(),
+                )
             }
         }
     }

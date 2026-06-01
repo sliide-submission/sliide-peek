@@ -3,14 +3,20 @@ package com.sliide.useractivity.ui.shell
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.sliide.useractivity.presentation.users.UserFeedState
 import com.sliide.useractivity.ui.components.AppTopBar
 import com.sliide.useractivity.ui.navigation.AppNavigator
 import com.sliide.useractivity.ui.navigation.AppRoute
 import com.sliide.useractivity.ui.navigation.title
+import com.sliide.useractivity.ui.users.UserFeedScreen
 
 @Composable
 fun CompactAppShell(
     navigator: AppNavigator,
+    userFeedState: UserFeedState,
+    onUserFeedRefresh: () -> Unit,
+    onUserFeedRetry: () -> Unit,
+    onAddUserClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val route = navigator.currentRoute
@@ -22,17 +28,21 @@ fun CompactAppShell(
         topBar = {
             AppTopBar(
                 title = route.title,
-                subtitle = if (route == AppRoute.Users) "24" else null,
+                subtitle = if (route == AppRoute.Users) userFeedState.users.size.toString() else null,
                 showBack = navigator.canGoBack,
                 onBack = if (navigator.canGoBack) ({ navigator.goBack() }) else null,
-                onRefresh = if (route == AppRoute.Users) ({}) else null,
+                onRefresh = if (route == AppRoute.Users) onUserFeedRefresh else null,
             )
         },
     ) {
         when (route) {
-            AppRoute.Users -> UserListPlaceholder(
+            AppRoute.Users -> UserFeedScreen(
+                state = userFeedState,
                 selectedUserId = navigator.selectedUserId,
-                onUserClick = { userId -> navigator.navigate(AppRoute.UserDetail(userId)) },
+                onUserClick = navigator::selectUser,
+                onRefresh = onUserFeedRefresh,
+                onRetry = onUserFeedRetry,
+                onAddUserClick = onAddUserClick,
                 modifier = Modifier.fillMaxSize(),
             )
 

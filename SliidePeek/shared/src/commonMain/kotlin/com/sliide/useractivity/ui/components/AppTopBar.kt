@@ -26,6 +26,7 @@ fun AppTopBar(
     subtitle: String? = null,
     showBack: Boolean = false,
     onBack: (() -> Unit)? = null,
+    onAdd: (() -> Unit)? = null,
     onRefresh: (() -> Unit)? = null,
 ) {
     Surface(
@@ -59,6 +60,11 @@ fun AppTopBar(
                 )
             }
             Spacer(Modifier.weight(1f))
+            if (onAdd != null) {
+                OutlinedButton(onClick = onAdd, modifier = Modifier.size(width = 42.dp, height = 34.dp)) {
+                    Text("+")
+                }
+            }
             if (onRefresh != null) {
                 OutlinedButton(onClick = onRefresh, modifier = Modifier.heightIn(min = 34.dp)) {
                     Text("Refresh")

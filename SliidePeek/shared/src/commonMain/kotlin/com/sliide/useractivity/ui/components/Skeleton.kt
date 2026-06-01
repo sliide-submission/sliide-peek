@@ -43,7 +43,7 @@ fun SkeletonRow(
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SkeletonBlock(
@@ -55,13 +55,19 @@ fun SkeletonRow(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(7.dp),
             ) {
-                SkeletonBlock(Modifier.fillMaxWidth(0.65f).height(10.dp), alpha = alpha)
+                SkeletonBlock(Modifier.fillMaxWidth(0.62f).height(10.dp), alpha = alpha)
                 SkeletonBlock(Modifier.fillMaxWidth(0.9f).height(9.dp), alpha = alpha)
             }
-            SkeletonBlock(
-                modifier = Modifier.size(width = 52.dp, height = 20.dp),
-                alpha = alpha,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SkeletonBlock(
+                    modifier = Modifier.size(width = 56.dp, height = 21.dp),
+                    alpha = alpha,
+                )
+                SkeletonBlock(
+                    modifier = Modifier.size(width = 46.dp, height = 8.dp),
+                    alpha = alpha,
+                )
+            }
         }
     }
 }
