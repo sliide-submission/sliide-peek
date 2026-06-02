@@ -91,7 +91,7 @@ Do not introduce other ownership tags unless the user asks for them.
 ## Workflow
 
 1. Read the current requirements/spec files first, especially:
-   - `userapplicationspecs.md`
+   - `PROJECT_SPEC.md`
    - `AGENTS.md`
    - relevant files under `.agents/skills/`
 2. Inspect the existing codebase before drafting. Use real paths and line numbers where possible.

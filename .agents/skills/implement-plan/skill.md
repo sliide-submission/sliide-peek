@@ -38,7 +38,7 @@ Before touching code, read in order:
 
 1. The plan file.
 2. `AGENTS.md`.
-3. `userapplicationspecs.md`.
+3. `PROJECT_SPEC.md`.
 4. Any relevant local skill files under `.agents/skills/`.
 5. Existing files named in the plan.
 

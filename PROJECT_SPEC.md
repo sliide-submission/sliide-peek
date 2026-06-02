@@ -1,4 +1,4 @@
-# User Activity Manager - Application Requirements
+# Sliide Peek — Application Requirements & Roadmap
 
 ## 1. Overview
 

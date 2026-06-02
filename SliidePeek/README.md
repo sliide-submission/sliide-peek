@@ -41,7 +41,7 @@ The shared module also includes the roadmap 12.3 read-only GoREST data/domain la
 
 Roadmap 12.4A adds the smart user feed foundation:
 
-- the feed loads the latest users from the first `/users` page (`page=1`); GoREST returns newest-first, so page 1 surfaces the most recent users and newly-created ones immediately (the original "last page" brief is corrected in `userapplicationspecs.md` §4.1). When a GoREST token is configured locally, the app also sends it on feed reads so user records created under that token are visible after refresh;
+- the feed loads the latest users from the first `/users` page (`page=1`); GoREST returns newest-first, so page 1 surfaces the most recent users and newly-created ones immediately (the original "last page" brief is corrected in `PROJECT_SPEC.md` §4.1). When a GoREST token is configured locally, the app also sends it on feed reads so user records created under that token are visible after refresh;
 - shared KMP relative timestamp logic formats a local `fetchedAt` timestamp because GoREST users do not expose a creation timestamp;
 - `UserFeedViewModel` exposes loading, refresh, retry, empty, error, and no-internet/offline-ready state;
 - the compact and tablet shells are wired to a minimal repository-backed feed UI with existing skeleton loading components;

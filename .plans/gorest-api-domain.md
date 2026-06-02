@@ -6,10 +6,10 @@ Create a small, testable GoREST data/domain layer for users, posts, comments, an
 
 ## Codebase findings
 
-- `userapplicationspecs.md:433-443` requires Ktor Client, kotlinx.serialization, strongly typed parsing, graceful HTTP/network error handling, non-blocking calls, and testability through repository interfaces or mock clients.
-- `userapplicationspecs.md:445-452` lists expected error cases: no internet, timeout, unauthorized, not found, validation failures, and server errors.
-- `userapplicationspecs.md:704-720` recommends Ktor + kotlinx.serialization, internal `DTO` suffix models, `toDomain()` mapper functions, separated domain models, fixture-based tests, Ktor mock-client style tests, `kotlin.test`, `kotlinx.coroutines.test`, and version-catalog dependencies.
-- `userapplicationspecs.md:822-839` defines roadmap 12.3 scope and the expected plan file: Ktor client, serialization DTOs, domain models, mappers, repositories/data sources, basic error handling, and fixture-based tests.
+- `PROJECT_SPEC.md:433-443` requires Ktor Client, kotlinx.serialization, strongly typed parsing, graceful HTTP/network error handling, non-blocking calls, and testability through repository interfaces or mock clients.
+- `PROJECT_SPEC.md:445-452` lists expected error cases: no internet, timeout, unauthorized, not found, validation failures, and server errors.
+- `PROJECT_SPEC.md:704-720` recommends Ktor + kotlinx.serialization, internal `DTO` suffix models, `toDomain()` mapper functions, separated domain models, fixture-based tests, Ktor mock-client style tests, `kotlin.test`, `kotlinx.coroutines.test`, and version-catalog dependencies.
+- `PROJECT_SPEC.md:822-839` defines roadmap 12.3 scope and the expected plan file: Ktor client, serialization DTOs, domain models, mappers, repositories/data sources, basic error handling, and fixture-based tests.
 - `SliidePeek/settings.gradle.kts:31-32` contains only `:androidApp` and `:shared`; the data/domain work should stay in the existing `shared` module.
 - `SliidePeek/gradle/libs.versions.toml:1-41` currently has Compose, AndroidX, Kotlin, and Material3 entries, but no Ktor, kotlinx.serialization JSON, serialization Gradle plugin, or coroutines-test aliases yet.
 - `SliidePeek/shared/build.gradle.kts:3-8` applies Kotlin Multiplatform, Android KMP library, Compose Multiplatform, and Compose compiler plugins; it does not yet apply `org.jetbrains.kotlin.plugin.serialization`.

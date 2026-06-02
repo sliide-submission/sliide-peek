@@ -9,8 +9,8 @@ Align the completed 12.4A smart user feed with `design/ux_v2.html` without rewri
 ## Codebase findings
 
 - `AGENTS.md:18-28` says roadmap item 12.4 onward should prioritise the official challenge: smart user feed, relative timestamp, add/delete/offline later, Koin where practical, and high-fidelity polish without unnecessary SDK complexity.
-- `userapplicationspecs.md:83-111` requires the smart feed to fetch the last `/users` page, display name, email, and relative timestamp from shared KMP logic, and support shimmer, error, no-internet/offline, empty, refresh, and cached/offline display states.
-- `userapplicationspecs.md:113-153` requires add-user to launch from a FAB, but the full add flow is a later roadmap item; this alignment pass should add only the visible add-action seam.
+- `PROJECT_SPEC.md:83-111` requires the smart feed to fetch the last `/users` page, display name, email, and relative timestamp from shared KMP logic, and support shimmer, error, no-internet/offline, empty, refresh, and cached/offline display states.
+- `PROJECT_SPEC.md:113-153` requires add-user to launch from a FAB, but the full add flow is a later roadmap item; this alignment pass should add only the visible add-action seam.
 - `design/ux_v2.html:245-255` explicitly re-scopes the app to Smart Feed, Add User, Delete + Undo, and Offline states, while cutting user posts, post detail, comments, todos, and activity drill-down from the primary UX.
 - `design/ux_v2.html:268-269` defines the phone smart feed as the app home and says each row carries name, email, a relative “last active” timestamp, and a status chip; a FAB adds a user; shimmer placeholders mirror row geometry; empty/error/offline/refreshing share one stable shell.
 - `design/ux_v2.html:288` says loading should show shimmer rows with the FAB still present.

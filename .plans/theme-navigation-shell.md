@@ -7,10 +7,10 @@ Establish the structural UX framework from `design/ux_v1.html`: phone push/stack
 ## Codebase findings
 
 - `AGENTS.md:18-28` requires the app to stay simple, clean, minimalist, KMP-first, Compose Multiplatform-based, suitable for Android/iPhone/iPad, and free from unnecessary production-SDK complexity.
-- `userapplicationspecs.md:269-281` requires a clean Compose UI with consistent spacing, reusable rows/cards, clear navigation, loading/error/empty states, feedback, and responsive layouts.
-- `userapplicationspecs.md:287-303` requires light/dark mode via Compose Material theming, system theme by default, accessible colours, and theme values instead of hardcoded screen colours.
-- `userapplicationspecs.md:346-385` requires iPad/tablet adaptive master-detail behaviour instead of stretched phone layouts.
-- `userapplicationspecs.md:802-812` defines roadmap item 12.2 scope: light/dark theme, basic navigation model, phone-safe layout shell, iPad/tablet adaptive layout strategy, and reusable loading/error/empty containers.
+- `PROJECT_SPEC.md:269-281` requires a clean Compose UI with consistent spacing, reusable rows/cards, clear navigation, loading/error/empty states, feedback, and responsive layouts.
+- `PROJECT_SPEC.md:287-303` requires light/dark mode via Compose Material theming, system theme by default, accessible colours, and theme values instead of hardcoded screen colours.
+- `PROJECT_SPEC.md:346-385` requires iPad/tablet adaptive master-detail behaviour instead of stretched phone layouts.
+- `PROJECT_SPEC.md:802-812` defines roadmap item 12.2 scope: light/dark theme, basic navigation model, phone-safe layout shell, iPad/tablet adaptive layout strategy, and reusable loading/error/empty containers.
 - `design/ux_v1.html:190-198` frames the wireframes as low/mid-fi “structure first”; phone uses push/stack navigation, iPad uses adaptive 2-pane master-detail, amber is only for selected/active states, and hi-fi light/dark comes later.
 - `design/ux_v1.html:202-205` defines the User List as the entry screen with name/email/status, subtle gender marker, active/inactive filter under the title, and shimmer placeholders matching real row geometry.
 - `design/ux_v1.html:213-239` shows the phone User List app bar with refresh action, segmented filter (`All`, `Active`, `Inactive`), and rows containing avatar initials, name, email, and status chip.

@@ -8,17 +8,17 @@ Create a minimal Kotlin Multiplatform Compose foundation for the User Activity M
 
 - `AGENTS.md:3` states the app should remain a clean Kotlin Multiplatform Compose app rather than a large production SDK.
 - `AGENTS.md:18-28` requires the project to stay simple, minimalist, KMP-first, Compose Multiplatform-based, and suitable for Android, iPhone, and iPad.
-- `userapplicationspecs.md:19-36` defines the target technology: Kotlin Multiplatform, Compose Multiplatform, coroutines, Ktor, kotlinx.serialization, MVVM-style architecture, Material theming, Android, and iOS with iPhone/iPad support.
-- `userapplicationspecs.md:456-484` recommends a simple layered architecture with data, domain, presentation, and UI layers.
-- `userapplicationspecs.md:700-730` recommends borrowing lightweight KMP practices, including common code in `commonMain`, platform-specific code only when necessary, version catalogs, and avoiding production SDK complexity.
-- `userapplicationspecs.md:781-798` defines roadmap item 12.1 and the required plan path: `.plans/project-foundation.md`.
+- `PROJECT_SPEC.md:19-36` defines the target technology: Kotlin Multiplatform, Compose Multiplatform, coroutines, Ktor, kotlinx.serialization, MVVM-style architecture, Material theming, Android, and iOS with iPhone/iPad support.
+- `PROJECT_SPEC.md:456-484` recommends a simple layered architecture with data, domain, presentation, and UI layers.
+- `PROJECT_SPEC.md:700-730` recommends borrowing lightweight KMP practices, including common code in `commonMain`, platform-specific code only when necessary, version catalogs, and avoiding production SDK complexity.
+- `PROJECT_SPEC.md:781-798` defines roadmap item 12.1 and the required plan path: `.plans/project-foundation.md`.
 - `.agents/skills/coding-style/skill.md:21-28` prefers simple, platform-neutral Kotlin and avoiding unnecessary frameworks.
 - `.agents/skills/coding-style/skill.md:43-54` recommends a small `shared/data`, `shared/domain`, `shared/presentation`, `shared/ui` style structure.
 - `.agents/skills/dependency-management/skill.md:22-28` requires version catalogs and minimal dependencies without hardcoded versions.
 - `.agents/skills/dependency-management/skill.md:30-42` identifies likely core dependencies, but the foundation should add only what is immediately needed for a compiling Compose app and defer Ktor/serialization until roadmap item 12.3 unless a template requires plugin wiring.
 - `.agents/skills/compose-ui/skill.md:23-30` favours simple composables, state hoisting, theme values, and minimal reusable components.
 - `.gitignore:1-4` currently only ignores local AI/auth files; it does not yet ignore Gradle, Android Studio, Kotlin, or Xcode build outputs.
-- Current project inspection shows no Gradle files, Android app, iOS app, shared module, source sets, or README exist yet. Existing root files are limited to `AGENTS.md`, `Brewfile`, `designer-brief.md`, `userapplicationspecs.md`, and `.gitignore`.
+- Current project inspection shows no Gradle files, Android app, iOS app, shared module, source sets, or README exist yet. Existing root files are limited to `AGENTS.md`, `Brewfile`, `designer-brief.md`, `PROJECT_SPEC.md`, and `.gitignore`.
 
 ## Approach summary
 

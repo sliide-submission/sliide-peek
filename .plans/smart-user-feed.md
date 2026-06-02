@@ -9,8 +9,8 @@ Implement roadmap 12.4 as the official primary user feed: load users from the la
 ## Codebase findings
 
 - `AGENTS.md:18-28` says roadmap item 12.4 onward should prioritise the official Sliide challenge while keeping the app simple, KMP-first, Compose Multiplatform-based, and free of unnecessary production-SDK complexity.
-- `userapplicationspecs.md:83-111` defines Smart User Feed requirements: fetch users from the last `/users` page, show name/email/relative timestamp, compute the timestamp in shared KMP logic, use a documented local timestamp strategy if GoREST has no timestamp, and support shimmer, error, no-internet/offline, empty, refresh, and cached/offline display states.
-- `userapplicationspecs.md:842-858` scopes roadmap 12.4 to last-page users, relative timestamp, ViewModel/state integration, shimmer, no-internet/offline state, refresh/retry, a local cached-feed seam if persistence is not available yet, and unit tests.
+- `PROJECT_SPEC.md:83-111` defines Smart User Feed requirements: fetch users from the last `/users` page, show name/email/relative timestamp, compute the timestamp in shared KMP logic, use a documented local timestamp strategy if GoREST has no timestamp, and support shimmer, error, no-internet/offline, empty, refresh, and cached/offline display states.
+- `PROJECT_SPEC.md:842-858` scopes roadmap 12.4 to last-page users, relative timestamp, ViewModel/state integration, shimmer, no-internet/offline state, refresh/retry, a local cached-feed seam if persistence is not available yet, and unit tests.
 - `designer-brief.md:24-43` repeats the user-feed states and notes that the timestamp can be based on a local concept such as `fetched just now`, `cached 5 minutes ago`, or `created 2 minutes ago`.
 - Requested `design-change-brief.md` was not present in the repo. The closest available design brief is `designer-brief.md`; high-fidelity updated designs are explicitly not ready, so this plan avoids final visual styling.
 - `SliidePeek/shared/src/commonMain/kotlin/com/sliide/useractivity/App.kt:8-13` still exposes the single shared Compose entry point and wraps `AppRoot()` in `AppTheme`.
