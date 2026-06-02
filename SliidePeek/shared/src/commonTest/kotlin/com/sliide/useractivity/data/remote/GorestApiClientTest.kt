@@ -156,24 +156,6 @@ class GorestApiClientTest {
         assertEquals("Bearer test-token", capturedAuthorization)
     }
 
-    @Test
-    fun `parses posts comments and todos`() = runTest {
-        val apiClient = GorestApiClient(
-            httpClient = routedMockClient(
-                "/public/v2/users/8484086/posts" to Fixtures.USER_POSTS,
-                "/public/v2/posts/282051" to Fixtures.POST_DETAIL,
-                "/public/v2/posts/282051/comments" to Fixtures.POST_COMMENTS,
-                "/public/v2/users/8484086/todos" to Fixtures.USER_TODOS,
-            ),
-            baseUrl = "https://example.test/public/v2",
-        )
-
-        assertEquals(282051, apiClient.getUserPosts(8484086).single().id)
-        assertEquals(282051, apiClient.getPost(282051).id)
-        assertEquals(189787, apiClient.getPostComments(282051).single().id)
-        assertEquals(104820, apiClient.getUserTodos(8484086).single().id)
-    }
-
     private fun mockClient(
         body: String,
         headers: io.ktor.http.Headers = jsonHeaders(),
@@ -182,17 +164,6 @@ class GorestApiClientTest {
         expectSuccess = true
         engine {
             addHandler { respond(body, status, headers) }
-        }
-        install(ContentNegotiation) { json(gorestJson) }
-    }
-
-    private fun routedMockClient(vararg routes: Pair<String, String>): HttpClient = HttpClient(MockEngine) {
-        expectSuccess = true
-        engine {
-            addHandler { request ->
-                val body = routes.first { it.first == request.url.encodedPath }.second
-                respond(body, HttpStatusCode.OK, jsonHeaders())
-            }
         }
         install(ContentNegotiation) { json(gorestJson) }
     }

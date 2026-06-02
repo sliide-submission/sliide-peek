@@ -14,7 +14,8 @@ class DeleteUserUseCaseImpl(
 ) : DeleteUserUseCase {
     override suspend fun invoke(id: Long): AppResult<Unit> = when (val result = userRepository.deleteUser(id)) {
         is AppResult.Success -> {
-            userCacheDataSource.deleteUser(id)
+            // The server delete succeeded; a cache-write failure must not turn it into an error.
+            runCatching { userCacheDataSource.deleteUser(id) }
             result
         }
         is AppResult.Failure -> result

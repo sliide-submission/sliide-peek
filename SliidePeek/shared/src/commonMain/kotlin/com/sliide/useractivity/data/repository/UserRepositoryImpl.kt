@@ -8,8 +8,6 @@ import com.sliide.useractivity.domain.AppResult
 import com.sliide.useractivity.domain.auth.BearerTokenProvider
 import com.sliide.useractivity.domain.model.CreateUserRequest
 import com.sliide.useractivity.domain.model.Page
-import com.sliide.useractivity.domain.model.Post
-import com.sliide.useractivity.domain.model.Todo
 import com.sliide.useractivity.domain.model.User
 import com.sliide.useractivity.domain.repository.UserRepository
 
@@ -47,13 +45,5 @@ class UserRepositoryImpl internal constructor(
 
     override suspend fun getUser(id: Long): AppResult<User> = repositoryCall {
         apiClient.getUser(id).toDomain()
-    }
-
-    override suspend fun getUserPosts(userId: Long): AppResult<List<Post>> = repositoryCall {
-        apiClient.getUserPosts(userId).map { it.toDomain() }
-    }
-
-    override suspend fun getUserTodos(userId: Long): AppResult<List<Todo>> = repositoryCall {
-        apiClient.getUserTodos(userId).map { it.toDomain() }
     }
 }

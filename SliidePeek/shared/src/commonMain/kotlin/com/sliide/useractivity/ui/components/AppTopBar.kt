@@ -25,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.sliide.useractivity.ui.theme.Radius
 import com.sliide.useractivity.ui.theme.SignalMotion
@@ -122,7 +121,7 @@ private fun TopIconButton(
     }
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(40.dp).semantics { },
+        modifier = Modifier.size(40.dp),
         shape = RoundedCornerShape(Radius.md),
         color = if (active) MaterialTheme.signal.accentSoft else MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),

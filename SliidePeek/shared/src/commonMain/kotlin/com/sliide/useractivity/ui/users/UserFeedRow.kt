@@ -163,9 +163,3 @@ fun UserFeedRow(
     }
 }
 
-private val UserStatus.label: String
-    get() = when (this) {
-        UserStatus.Active -> "Active"
-        UserStatus.Inactive -> "Inactive"
-        UserStatus.Unknown -> "Unknown"
-    }

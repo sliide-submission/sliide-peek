@@ -166,17 +166,3 @@ private fun DetailItem(label: String, value: String, modifier: Modifier = Modifi
         )
     }
 }
-
-private val UserStatus.label: String
-    get() = when (this) {
-        UserStatus.Active -> "Active"
-        UserStatus.Inactive -> "Inactive"
-        UserStatus.Unknown -> "Unknown"
-    }
-
-private val UserGender.label: String
-    get() = when (this) {
-        UserGender.Male -> "Male"
-        UserGender.Female -> "Female"
-        UserGender.Unknown -> "Unknown"
-    }

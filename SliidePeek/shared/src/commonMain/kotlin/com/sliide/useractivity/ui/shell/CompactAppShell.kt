@@ -75,19 +75,6 @@ fun CompactAppShell(
                 user = userFeedState.users.firstOrNull { it.id == route.userId },
                 modifier = Modifier.fillMaxSize(),
             )
-
-            is AppRoute.UserPosts -> PostsListPlaceholder(
-                userId = route.userId,
-                onPostClick = { userId, postId -> navigator.navigate(AppRoute.PostDetail(userId = userId, postId = postId)) },
-                modifier = Modifier.fillMaxSize(),
-            )
-
-            is AppRoute.UserTodos -> TodosListPlaceholder(modifier = Modifier.fillMaxSize())
-
-            is AppRoute.PostDetail -> PostDetailPlaceholder(
-                postId = route.postId,
-                modifier = Modifier.fillMaxSize(),
-            )
         }
     }
 

@@ -31,7 +31,7 @@ class AppNavigatorTest {
     fun `back returns to previous route`() {
         val navigator = AppNavigator()
         navigator.navigate(AppRoute.UserDetail(2))
-        navigator.navigate(AppRoute.PostDetail(userId = 2, postId = 101))
+        navigator.navigate(AppRoute.UserDetail(3))
 
         val didGoBack = navigator.goBack()
 
@@ -51,13 +51,12 @@ class AppNavigatorTest {
     @Test
     fun `reset clears stack and selections`() {
         val navigator = AppNavigator()
-        navigator.navigate(AppRoute.PostDetail(userId = 2, postId = 101))
+        navigator.navigate(AppRoute.UserDetail(2))
 
         navigator.resetToUsers()
 
         assertEquals(AppRoute.Users, navigator.currentRoute)
         assertFalse(navigator.canGoBack)
         assertNull(navigator.selectedUserId)
-        assertNull(navigator.selectedPostId)
     }
 }

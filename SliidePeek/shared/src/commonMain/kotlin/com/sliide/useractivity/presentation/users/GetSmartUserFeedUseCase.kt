@@ -47,11 +47,14 @@ class GetSmartUserFeedUseCase(
 
         val fetchedAtMillis = clock.nowMillis()
         val cachedAtMillis = fetchedAtMillis
-        userCacheDataSource.replaceCachedFeed(
-            page = page,
-            fetchedAtMillis = fetchedAtMillis,
-            cachedAtMillis = cachedAtMillis,
-        )
+        // A cache-write failure must not fail an otherwise-successful network load.
+        runCatching {
+            userCacheDataSource.replaceCachedFeed(
+                page = page,
+                fetchedAtMillis = fetchedAtMillis,
+                cachedAtMillis = cachedAtMillis,
+            )
+        }
 
         return AppResult.Success(page.toFeedResult(fetchedAtMillis, cachedAtMillis, fromCache = false))
     }
@@ -82,20 +85,7 @@ class GetSmartUserFeedUseCase(
     )
 
     private fun Page<User>.toFeedItems(fetchedAtMillis: Long): List<UserFeedItem> =
-        items.map { user -> user.toFeedItem(fetchedAtMillis) }
-
-    private fun User.toFeedItem(fetchedAtMillis: Long): UserFeedItem = UserFeedItem(
-        id = id,
-        name = name,
-        email = email,
-        gender = gender,
-        status = status,
-        fetchedAtMillis = fetchedAtMillis,
-        relativeTimestamp = relativeTimeFormatter.format(
-            thenMillis = fetchedAtMillis,
-            nowMillis = clock.nowMillis(),
-        ),
-    )
+        items.map { user -> user.toFeedItem(fetchedAtMillis, relativeTimeFormatter, clock) }
 
     private fun AppError.isOfflineError(): Boolean = this is AppError.Network || this is AppError.Timeout
 }
@@ -116,14 +106,16 @@ class LoadOlderUsersUseCaseImpl(
         }
         val fetchedAtMillis = clock.nowMillis()
         val cachedAtMillis = fetchedAtMillis
-        userCacheDataSource.appendCachedPage(
-            page = loadedPage,
-            fetchedAtMillis = fetchedAtMillis,
-            cachedAtMillis = cachedAtMillis,
-        )
+        runCatching {
+            userCacheDataSource.appendCachedPage(
+                page = loadedPage,
+                fetchedAtMillis = fetchedAtMillis,
+                cachedAtMillis = cachedAtMillis,
+            )
+        }
         return AppResult.Success(
             UserFeedResult(
-                users = loadedPage.items.map { it.toFeedItem(fetchedAtMillis) },
+                users = loadedPage.items.map { it.toFeedItem(fetchedAtMillis, relativeTimeFormatter, clock) },
                 fromCache = false,
                 lastUpdatedMillis = cachedAtMillis,
                 currentPage = loadedPage.page,
@@ -132,17 +124,4 @@ class LoadOlderUsersUseCaseImpl(
             ),
         )
     }
-
-    private fun User.toFeedItem(fetchedAtMillis: Long): UserFeedItem = UserFeedItem(
-        id = id,
-        name = name,
-        email = email,
-        gender = gender,
-        status = status,
-        fetchedAtMillis = fetchedAtMillis,
-        relativeTimestamp = relativeTimeFormatter.format(
-            thenMillis = fetchedAtMillis,
-            nowMillis = clock.nowMillis(),
-        ),
-    )
 }

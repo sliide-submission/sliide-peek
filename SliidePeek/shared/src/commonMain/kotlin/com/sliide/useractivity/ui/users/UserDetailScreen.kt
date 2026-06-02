@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.domain.model.UserStatus
 import com.sliide.useractivity.presentation.users.UserFeedItem
 import com.sliide.useractivity.ui.components.ContentState
@@ -104,17 +103,3 @@ private fun DetailItem(label: String, value: String, modifier: Modifier = Modifi
         )
     }
 }
-
-private val UserStatus.label: String
-    get() = when (this) {
-        UserStatus.Active -> "Active"
-        UserStatus.Inactive -> "Inactive"
-        UserStatus.Unknown -> "Unknown"
-    }
-
-private val UserGender.label: String
-    get() = when (this) {
-        UserGender.Male -> "Male"
-        UserGender.Female -> "Female"
-        UserGender.Unknown -> "Unknown"
-    }

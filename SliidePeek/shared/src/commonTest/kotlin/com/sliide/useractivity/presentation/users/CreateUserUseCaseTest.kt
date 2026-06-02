@@ -6,8 +6,6 @@ import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
 import com.sliide.useractivity.domain.model.CreateUserRequest
 import com.sliide.useractivity.domain.model.Page
-import com.sliide.useractivity.domain.model.Post
-import com.sliide.useractivity.domain.model.Todo
 import com.sliide.useractivity.domain.model.User
 import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.domain.model.UserStatus
@@ -73,8 +71,6 @@ class CreateUserUseCaseTest {
         override suspend fun createUser(request: CreateUserRequest): AppResult<User> = result
         override suspend fun deleteUser(id: Long): AppResult<Unit> = error("Not needed")
         override suspend fun getUser(id: Long): AppResult<User> = error("Not needed")
-        override suspend fun getUserPosts(userId: Long): AppResult<List<Post>> = error("Not needed")
-        override suspend fun getUserTodos(userId: Long): AppResult<List<Todo>> = error("Not needed")
     }
 
     private class FixedClock(private val nowMillis: Long) : AppClock {

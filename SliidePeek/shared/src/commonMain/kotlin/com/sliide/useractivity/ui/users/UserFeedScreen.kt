@@ -128,8 +128,11 @@ private fun UserFeedContent(
 
             else -> {
                 val listState = rememberLazyListState()
-                LaunchedEffect(state.users.firstOrNull()?.id) {
-                    if (state.users.isNotEmpty() && !state.isLoadingMore) {
+                // Only jump to the top when a newly added user lands there, so deleting or
+                // undoing a row no longer yanks the list around.
+                LaunchedEffect(state.highlightedUserId) {
+                    val highlightedId = state.highlightedUserId
+                    if (highlightedId != null && state.users.firstOrNull()?.id == highlightedId) {
                         listState.animateScrollToItem(0)
                     }
                 }
@@ -172,7 +175,9 @@ private fun UserFeedContent(
                             onClick = { onUserClick(user.id) },
                             onLongClick = if (enableLongPress) ({ onUserLongPress(user.id) }) else null,
                             compact = compactRows,
-                            modifier = Modifier,
+                            // Animate insert (add/undo), removal (delete), and reflow so the
+                            // optimistic feed mutations feel "expensive" rather than snapping.
+                            modifier = Modifier.animateItem(),
                         )
                     }
                     if (state.isLoadingMore) {

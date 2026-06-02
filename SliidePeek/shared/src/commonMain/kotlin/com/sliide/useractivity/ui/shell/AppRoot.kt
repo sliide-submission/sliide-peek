@@ -27,12 +27,12 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.sliide.useractivity.ui.components.SignalIcons
@@ -77,9 +77,7 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
 
                 is UserFeedEvent.ShowUndoDelete -> scope.launch {
                     val result = snackbarHostState.showSnackbar(
-                        message = event.message,
-                        actionLabel = "Undo",
-                        duration = SnackbarDuration.Long,
+                        SignalSnackbarVisuals(message = event.message, actionLabel = "Undo"),
                     )
                     if (result == SnackbarResult.ActionPerformed) {
                         userFeedViewModel.undoDelete(event.userId)
@@ -90,9 +88,7 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
 
                 is UserFeedEvent.ShowDeleteFailed -> scope.launch {
                     val result = snackbarHostState.showSnackbar(
-                        message = event.message,
-                        actionLabel = "Retry",
-                        duration = SnackbarDuration.Long,
+                        SignalSnackbarVisuals(message = event.message, actionLabel = "Retry", isError = true),
                     )
                     if (result == SnackbarResult.ActionPerformed) {
                         userFeedViewModel.retryDelete(event.userId)
@@ -172,12 +168,22 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
     }
 }
 
+/** Snackbar visuals carrying an explicit error flag so styling never depends on matching label text. */
+private class SignalSnackbarVisuals(
+    override val message: String,
+    override val actionLabel: String?,
+    val isError: Boolean = false,
+) : SnackbarVisuals {
+    override val duration: SnackbarDuration = SnackbarDuration.Long
+    override val withDismissAction: Boolean = false
+}
+
 @Composable
 private fun SignalSnackbar(data: SnackbarData) {
-    val isError = data.visuals.actionLabel == "Retry"
+    val isError = (data.visuals as? SignalSnackbarVisuals)?.isError == true
     val container = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.inverseSurface
-    val content = if (isError) Color.White else MaterialTheme.colorScheme.inverseOnSurface
-    val action = if (isError) Color.White else MaterialTheme.colorScheme.primary
+    val content = if (isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.inverseOnSurface
+    val action = if (isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.primary
 
     Surface(
         modifier = Modifier.fillMaxWidth(),

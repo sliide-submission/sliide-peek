@@ -8,13 +8,9 @@ import com.sliide.useractivity.data.local.SqlDelightUserCacheDataSource
 import com.sliide.useractivity.data.local.UserCacheDataSource
 import com.sliide.useractivity.data.remote.GorestApiClient
 import com.sliide.useractivity.data.remote.createGorestHttpClient
-import com.sliide.useractivity.data.repository.PostRepositoryImpl
-import com.sliide.useractivity.data.repository.TodoRepositoryImpl
 import com.sliide.useractivity.data.repository.UserRepositoryImpl
 import com.sliide.useractivity.domain.auth.BearerTokenProvider
 import com.sliide.useractivity.domain.connectivity.ConnectivityMonitor
-import com.sliide.useractivity.domain.repository.PostRepository
-import com.sliide.useractivity.domain.repository.TodoRepository
 import com.sliide.useractivity.domain.repository.UserRepository
 import com.sliide.useractivity.domain.time.AppClock
 import com.sliide.useractivity.domain.time.SystemAppClock
@@ -42,8 +38,6 @@ fun appModule(databaseDriverFactory: DatabaseDriverFactory): Module = module {
     single<UserCacheDataSource> { SqlDelightUserCacheDataSource(get()) }
     single<ConnectivityMonitor> { databaseDriverFactory.createConnectivityMonitor() }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
-    single<PostRepository> { PostRepositoryImpl(get()) }
-    single<TodoRepository> { TodoRepositoryImpl(get()) }
     factory<LoadUserFeedUseCase> {
         GetSmartUserFeedUseCase(
             userRepository = get(),

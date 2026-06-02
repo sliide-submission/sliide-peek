@@ -1,9 +1,6 @@
 package com.sliide.useractivity.data.remote
 
-import com.sliide.useractivity.data.remote.dto.CommentDTO
 import com.sliide.useractivity.data.remote.dto.CreateUserRequestDTO
-import com.sliide.useractivity.data.remote.dto.PostDTO
-import com.sliide.useractivity.data.remote.dto.TodoDTO
 import com.sliide.useractivity.data.remote.dto.UserDTO
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -30,11 +27,15 @@ internal class GorestApiClient(
             parameter("per_page", perPage)
             bearerToken?.let { token -> header(HttpHeaders.Authorization, "Bearer $token") }
         }
+        val items: List<UserDTO> = response.body()
         return GorestPage(
-            items = response.body(),
+            items = items,
             page = response.paginationHeader("page") ?: page,
             perPage = response.paginationHeader("limit") ?: perPage,
-            totalPages = response.paginationHeader("pages") ?: page,
+            // When the pagination header is missing, infer "there is more" from a full page so
+            // we don't silently disable paging instead of defaulting totalPages to the current page.
+            totalPages = response.paginationHeader("pages")
+                ?: if (items.size >= perPage) page + 1 else page,
         )
     }
 
@@ -56,25 +57,9 @@ internal class GorestApiClient(
         }
     }
 
-    suspend fun getUserPosts(userId: Long): List<PostDTO> = httpClient.get(baseUrl) {
-        url { appendPathSegments("users", userId.toString(), "posts") }
-    }.body()
-
-    suspend fun getUserTodos(userId: Long): List<TodoDTO> = httpClient.get(baseUrl) {
-        url { appendPathSegments("users", userId.toString(), "todos") }
-    }.body()
-
-    suspend fun getPost(id: Long): PostDTO = httpClient.get(baseUrl) {
-        url { appendPathSegments("posts", id.toString()) }
-    }.body()
-
-    suspend fun getPostComments(postId: Long): List<CommentDTO> = httpClient.get(baseUrl) {
-        url { appendPathSegments("posts", postId.toString(), "comments") }
-    }.body()
-
+    // Ktor headers are case-insensitive, so a single lookup covers both header casings GoREST uses.
     private fun HttpResponse.paginationHeader(name: String): Int? =
         headers["x-pagination-$name"]?.toIntOrNull()
-            ?: headers["X-Pagination-${name.replaceFirstChar { it.uppercase() }}"]?.toIntOrNull()
 
     companion object {
         const val DEFAULT_BASE_URL = "https://gorest.co.in/public/v2"
