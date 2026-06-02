@@ -2,6 +2,8 @@ package com.sliide.useractivity.presentation.users
 
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
+import com.sliide.useractivity.domain.connectivity.ConnectivityMonitor
+import com.sliide.useractivity.domain.connectivity.ConnectivityStatus
 import com.sliide.useractivity.domain.model.CreateUserRequest
 import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.domain.model.UserStatus
@@ -169,6 +171,126 @@ class UserFeedViewModelTest {
     }
 
     @Test
+    fun `load success records next page when more users are available`() = runTest {
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(
+                results = mutableListOf(
+                    AppResult.Success(feedResult(listOf(feedUser(1)), currentPage = 1, totalPages = 3)),
+                ),
+            ),
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+
+        assertEquals(2, viewModel.state.value.nextPage)
+        assertTrue(viewModel.state.value.hasMoreUsers)
+    }
+
+    @Test
+    fun `load more appends older users and de-dupes ids`() = runTest {
+        val older = FakeLoadOlderUsersUseCase(
+            mutableMapOf(
+                2 to AppResult.Success(feedResult(listOf(feedUser(2), feedUser(3)), currentPage = 2, totalPages = 3)),
+                3 to AppResult.Success(feedResult(listOf(feedUser(3), feedUser(4)), currentPage = 3, totalPages = 3)),
+            ),
+        )
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(
+                results = mutableListOf(AppResult.Success(feedResult(listOf(feedUser(1), feedUser(2)), currentPage = 1, totalPages = 3))),
+            ),
+            loadOlderUsers = older,
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.loadMoreUsers()
+        advanceUntilIdle()
+        viewModel.loadMoreUsers()
+        advanceUntilIdle()
+
+        assertEquals(listOf(2, 3), older.requestedPages)
+        assertEquals(listOf(1L, 2L, 3L, 4L), viewModel.state.value.users.map { it.id })
+        assertFalse(viewModel.state.value.hasMoreUsers)
+        assertEquals(null, viewModel.state.value.nextPage)
+    }
+
+    @Test
+    fun `load more failure preserves existing users`() = runTest {
+        val older = FakeLoadOlderUsersUseCase(mutableMapOf(2 to AppResult.Failure(AppError.Server(500))))
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(
+                results = mutableListOf(AppResult.Success(feedResult(listOf(feedUser(1)), currentPage = 1, totalPages = 2))),
+            ),
+            loadOlderUsers = older,
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.loadMoreUsers()
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L), viewModel.state.value.users.map { it.id })
+        assertFalse(viewModel.state.value.isLoadingMore)
+        assertEquals("The service is unavailable right now. Please try again.", viewModel.state.value.loadMoreErrorMessage)
+        assertEquals(2, viewModel.state.value.nextPage)
+    }
+
+    @Test
+    fun `refresh after pagination resets pagination to latest page`() = runTest {
+        val older = FakeLoadOlderUsersUseCase(
+            mutableMapOf(2 to AppResult.Success(feedResult(listOf(feedUser(2)), currentPage = 2, totalPages = 2))),
+        )
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(
+                results = mutableListOf(
+                    AppResult.Success(feedResult(listOf(feedUser(1)), currentPage = 1, totalPages = 2)),
+                    AppResult.Success(feedResult(listOf(feedUser(9)), currentPage = 1, totalPages = 1)),
+                ),
+            ),
+            loadOlderUsers = older,
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.loadMoreUsers()
+        advanceUntilIdle()
+        viewModel.refresh()
+        advanceUntilIdle()
+
+        assertEquals(listOf(9L), viewModel.state.value.users.map { it.id })
+        assertFalse(viewModel.state.value.hasMoreUsers)
+        assertEquals(null, viewModel.state.value.nextPage)
+    }
+
+    @Test
+    fun `connectivity offline with loaded users shows cached banner state`() = runTest {
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Success(feedResult(listOf(feedUser(1))))),),
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.onConnectivityChanged(ConnectivityStatus.Offline)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isDeviceOffline)
+        assertEquals("Offline — showing cached users", viewModel.state.value.offlineMessage)
+        assertFalse(viewModel.state.value.hasMoreUsers)
+    }
+
+    @Test
+    fun `connectivity offline with no users shows no-cache offline state`() = runTest {
+        val viewModel = viewModel(FakeLoadUserFeedUseCase())
+        viewModel.onConnectivityChanged(ConnectivityStatus.Offline)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isOffline)
+        assertTrue(viewModel.state.value.users.isEmpty())
+        assertEquals("No internet connection. Try again when you are back online.", viewModel.state.value.offlineMessage)
+    }
+
+    @Test
     fun `opening and dismissing add user toggles form visibility`() = runTest {
         val viewModel = viewModel(FakeLoadUserFeedUseCase())
 
@@ -254,7 +376,7 @@ class UserFeedViewModelTest {
     }
 
     @Test
-    fun `confirming delete while offline shows message and leaves feed untouched`() = runTest {
+    fun `confirming delete while offline state still starts undo flow`() = runTest {
         val events = RecordedEvents()
         val delete = FakeDeleteUserUseCase()
         val viewModel = viewModel(
@@ -277,10 +399,10 @@ class UserFeedViewModelTest {
         advanceUntilIdle()
 
         assertEquals(null, viewModel.state.value.deleteConfirmation)
-        assertEquals(listOf(1L), viewModel.state.value.users.map { it.id })
+        assertTrue(viewModel.state.value.users.isEmpty())
         assertTrue(delete.deletedIds.isEmpty())
         assertEquals(
-            listOf<UserFeedEvent>(UserFeedEvent.ShowMessage("You’re offline. Reconnect before deleting users.")),
+            listOf<UserFeedEvent>(UserFeedEvent.ShowUndoDelete(userId = 1, message = "User 1 deleted")),
             events.events.toList(),
         )
     }
@@ -470,15 +592,19 @@ class UserFeedViewModelTest {
 
     private fun TestScope.viewModel(
         loadUserFeedUseCase: LoadUserFeedUseCase,
+        loadOlderUsers: LoadOlderUsersUseCase = FakeLoadOlderUsersUseCase(),
         createUser: CreateUserUseCase = FakeCreateUserUseCase(AppResult.Failure(AppError.Unauthorized)),
         deleteUser: DeleteUserUseCase = FakeDeleteUserUseCase(),
         nowMillis: Long = 1_000,
+        connectivityMonitor: ConnectivityMonitor? = null,
     ): UserFeedViewModel = UserFeedViewModel(
         loadUserFeed = loadUserFeedUseCase,
+        loadOlderUsers = loadOlderUsers,
         createUser = createUser,
         deleteUser = deleteUser,
-        scope = this,
+        scope = if (connectivityMonitor == null) this else backgroundScope,
         clock = FixedClock(nowMillis),
+        connectivityMonitor = connectivityMonitor,
     )
 
     private class FakeLoadUserFeedUseCase(
@@ -487,6 +613,17 @@ class UserFeedViewModelTest {
     ) : LoadUserFeedUseCase {
         override suspend fun invoke(): AppResult<UserFeedResult> =
             if (results.isNotEmpty()) results.removeAt(0) else pending!!.await()
+    }
+
+    private class FakeLoadOlderUsersUseCase(
+        private val results: MutableMap<Int, AppResult<UserFeedResult>> = mutableMapOf(),
+    ) : LoadOlderUsersUseCase {
+        val requestedPages = mutableListOf<Int>()
+
+        override suspend fun invoke(page: Int): AppResult<UserFeedResult> {
+            requestedPages += page
+            return results[page] ?: AppResult.Failure(AppError.NotFound)
+        }
     }
 
     private class FakeCreateUserUseCase(
@@ -520,10 +657,16 @@ class UserFeedViewModelTest {
         users: List<UserFeedItem>,
         fromCache: Boolean = false,
         lastUpdatedMillis: Long? = users.firstOrNull()?.fetchedAtMillis,
+        currentPage: Int = 1,
+        totalPages: Int = 1,
+        hasNextPage: Boolean = currentPage < totalPages,
     ) = UserFeedResult(
         users = users,
         fromCache = fromCache,
         lastUpdatedMillis = lastUpdatedMillis,
+        currentPage = currentPage,
+        totalPages = totalPages,
+        hasNextPage = hasNextPage,
     )
 
     private fun feedUser(id: Long) = UserFeedItem(

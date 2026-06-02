@@ -18,6 +18,7 @@ import com.sliide.useractivity.ui.navigation.AppRoute
 import com.sliide.useractivity.ui.navigation.title
 import com.sliide.useractivity.ui.theme.Radius
 import com.sliide.useractivity.ui.users.AddUserForm
+import com.sliide.useractivity.ui.users.UserDetailScreen
 import com.sliide.useractivity.ui.users.UserFeedScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +28,7 @@ fun CompactAppShell(
     userFeedState: UserFeedState,
     onUserFeedRefresh: () -> Unit,
     onUserFeedRetry: () -> Unit,
+    onLoadMoreUsers: () -> Unit,
     onAddUserClick: () -> Unit,
     onDismissAddUser: () -> Unit,
     onAddUserNameChanged: (String) -> Unit,
@@ -58,20 +60,19 @@ fun CompactAppShell(
         when (route) {
             AppRoute.Users -> UserFeedScreen(
                 state = userFeedState,
-                selectedUserId = navigator.selectedUserId,
+                // Compact/mobile pushes a detail screen, so row selection highlighting is not useful here.
+                selectedUserId = null,
                 onUserClick = onUserClick,
                 onRefresh = onUserFeedRefresh,
                 onRetry = onUserFeedRetry,
                 onAddUserClick = onAddUserClick,
+                onLoadMoreUsers = onLoadMoreUsers,
                 onUserLongPress = onUserLongPress,
                 modifier = Modifier.fillMaxSize(),
             )
 
-            is AppRoute.UserDetail -> UserDetailPlaceholder(
-                userId = route.userId,
-                onPostsClick = { userId -> navigator.navigate(AppRoute.UserPosts(userId)) },
-                onTodosClick = { userId -> navigator.navigate(AppRoute.UserTodos(userId)) },
-                onPostClick = { userId, postId -> navigator.navigate(AppRoute.PostDetail(userId = userId, postId = postId)) },
+            is AppRoute.UserDetail -> UserDetailScreen(
+                user = userFeedState.users.firstOrNull { it.id == route.userId },
                 modifier = Modifier.fillMaxSize(),
             )
 

@@ -919,7 +919,37 @@ Suggested plan file:
 
 ---
 
-## 12.9 AI Usage Documentation and Submission Readiness
+## 12.9 Post MVP Improvements
+
+These should only be planned after the official core requirements are stable.
+
+Candidate improvements:
+
+- Pagination / infinite scroll for the user feed.
+  - The app no longer treats the final GoREST page as the primary feed. It now starts from the latest users page.
+  - Pagination should reveal additional/older users as the user scrolls.
+  - Prefer infinite scroll over a manual load-more button unless implementation complexity argues otherwise.
+- View user: push a read-only user detail view from the users list on mobile devices.
+  - Keep this read-only; the official challenge does not require editing users.
+  - On tablet/iPad, this may use the existing action/detail panel rather than a pushed route.
+- Live connectivity monitor for online/offline state.
+  - Treat this as device connectivity, not full GoREST API reachability.
+  - API failures should still be handled separately by the existing repository/error-state flow.
+- Additional UI and unit test pass.
+  - Treat this as a separate quality task to review the app and identify useful additional shared unit tests and Compose/UI tests.
+
+Removed/deprioritised improvements:
+
+- Edit user flow — not required by the official challenge.
+- API token/settings screen — token setup should remain documented in README/runtime environment configuration rather than becoming a user-facing screen.
+
+Enhancements should be promoted to `.plans/<enhancement>.md` only when selected for implementation.
+
+This roadmap should provide useful groundwork while prioritising the official challenge requirements.
+
+---
+
+## 12.10 AI Usage Documentation and Submission Readiness
 
 Goal: document the AI-assisted development process clearly for reviewers.
 
@@ -938,21 +968,3 @@ Suggested plan file:
 ```text
 .plans/ai-documentation-submission.md
 ```
-
----
-
-## 12.10 Optional Enhancements
-
-These should only be planned after the official core requirements are stable.
-
-Possible optional plans:
-
-- user detail view
-- edit user flow
-- local search/filtering
-- API token/settings screen
-- additional tests
-- theme selector
-- posts/comments/todos browsing as non-core extra
-
-This roadmap should provide useful groundwork while prioritising the official challenge requirements.

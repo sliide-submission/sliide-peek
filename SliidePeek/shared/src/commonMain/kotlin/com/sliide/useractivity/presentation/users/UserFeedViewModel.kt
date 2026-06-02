@@ -2,6 +2,8 @@ package com.sliide.useractivity.presentation.users
 
 import com.sliide.useractivity.domain.AppError
 import com.sliide.useractivity.domain.AppResult
+import com.sliide.useractivity.domain.connectivity.ConnectivityMonitor
+import com.sliide.useractivity.domain.connectivity.ConnectivityStatus
 import com.sliide.useractivity.domain.model.CreateUserRequest
 import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.domain.model.UserStatus
@@ -12,6 +14,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -19,12 +22,14 @@ import kotlinx.coroutines.launch
 
 class UserFeedViewModel(
     private val loadUserFeed: LoadUserFeedUseCase,
+    private val loadOlderUsers: LoadOlderUsersUseCase,
     private val createUser: CreateUserUseCase,
     private val deleteUser: DeleteUserUseCase,
     private val scope: CoroutineScope,
     private val clock: AppClock,
     private val relativeTimeFormatter: RelativeTimeFormatter = RelativeTimeFormatter(),
     private val addUserFormValidator: AddUserFormValidator = AddUserFormValidator(),
+    private val connectivityMonitor: ConnectivityMonitor? = null,
 ) {
     private val _state = MutableStateFlow(UserFeedState())
     val state: StateFlow<UserFeedState> = _state.asStateFlow()
@@ -33,6 +38,14 @@ class UserFeedViewModel(
     val events: Flow<UserFeedEvent> = eventsChannel.receiveAsFlow()
 
     private val pendingDeletions = mutableMapOf<Long, PendingDeletion>()
+
+    init {
+        connectivityMonitor?.let { monitor ->
+            scope.launch {
+                monitor.status.distinctUntilChanged().collect(::onConnectivityChanged)
+            }
+        }
+    }
 
     fun load() {
         val current = _state.value
@@ -50,6 +63,43 @@ class UserFeedViewModel(
         val current = _state.value
         if (current.isLoading || current.isRefreshing) return
         loadInternal(isRefresh = current.users.isNotEmpty())
+    }
+
+    fun loadMoreUsers() {
+        val current = _state.value
+        val page = current.nextPage ?: return
+        if (
+            current.isLoading ||
+            current.isRefreshing ||
+            current.isLoadingMore ||
+            !current.hasMoreUsers
+        ) return
+
+        scope.launch {
+            _state.update { it.copy(isLoadingMore = true, loadMoreErrorMessage = null) }
+            when (val result = loadOlderUsers(page)) {
+                is AppResult.Success -> _state.update { currentState ->
+                    val feed = result.value
+                    currentState.copy(
+                        isLoadingMore = false,
+                        users = (currentState.users + feed.users).distinctBy { it.id },
+                        errorMessage = null,
+                        offlineMessage = null,
+                        loadMoreErrorMessage = null,
+                        nextPage = feed.nextPage,
+                        hasMoreUsers = feed.hasNextPage,
+                        connectivityStatus = ConnectivityStatus.Online,
+                        lastUpdatedLabel = currentState.lastUpdatedLabel,
+                    )
+                }
+                is AppResult.Failure -> _state.update { currentState ->
+                    currentState.copy(
+                        isLoadingMore = false,
+                        loadMoreErrorMessage = result.error.toUserMessage(),
+                    )
+                }
+            }
+        }
     }
 
     fun openAddUser() {
@@ -138,12 +188,6 @@ class UserFeedViewModel(
         val current = _state.value
         val user = current.deleteConfirmation ?: return
         _state.update { it.copy(deleteConfirmation = null) }
-        if (current.isOffline) {
-            scope.launch {
-                eventsChannel.send(UserFeedEvent.ShowMessage("You’re offline. Reconnect before deleting users."))
-            }
-            return
-        }
         beginOptimisticDelete(user)
     }
 
@@ -223,6 +267,7 @@ class UserFeedViewModel(
                 highlightedUserId = user.id,
                 errorMessage = null,
                 offlineMessage = null,
+                connectivityStatus = ConnectivityStatus.Online,
             )
         }
         eventsChannel.send(UserFeedEvent.ShowMessage("${user.name} added"))
@@ -246,12 +291,17 @@ class UserFeedViewModel(
                     current.copy(
                         isLoading = false,
                         isRefreshing = false,
+                        isLoadingMore = false,
                         users = feed.users,
                         highlightedUserId = null,
                         errorMessage = null,
                         offlineMessage = if (feed.fromCache) "Offline — showing cached users" else null,
+                        loadMoreErrorMessage = null,
                         lastUpdatedLabel = feed.lastUpdatedMillis?.let(::formatLastUpdated),
                         canRetry = feed.fromCache,
+                        nextPage = feed.nextPage,
+                        hasMoreUsers = feed.hasNextPage,
+                        connectivityStatus = if (feed.fromCache) current.connectivityStatus else ConnectivityStatus.Online,
                     )
                 }
 
@@ -261,12 +311,42 @@ class UserFeedViewModel(
                     current.copy(
                         isLoading = false,
                         isRefreshing = false,
+                        isLoadingMore = false,
                         errorMessage = if (offline) null else message,
                         offlineMessage = if (offline) message else null,
+                        loadMoreErrorMessage = null,
                         canRetry = true,
+                        hasMoreUsers = if (offline) false else current.hasMoreUsers,
                     )
                 }
             }
+        }
+    }
+
+    fun onConnectivityChanged(status: ConnectivityStatus) {
+        val wasOffline = _state.value.isDeviceOffline
+        _state.update { current ->
+            current.copy(
+                connectivityStatus = status,
+                offlineMessage = when (status) {
+                    ConnectivityStatus.Offline -> if (current.users.isNotEmpty()) {
+                        "Offline — showing cached users"
+                    } else {
+                        current.offlineMessage ?: "No internet connection. Try again when you are back online."
+                    }
+                    ConnectivityStatus.Online -> null
+                    ConnectivityStatus.Unknown -> current.offlineMessage
+                },
+                canRetry = when (status) {
+                    ConnectivityStatus.Offline -> true
+                    ConnectivityStatus.Online -> current.errorMessage != null
+                    ConnectivityStatus.Unknown -> current.canRetry
+                },
+                hasMoreUsers = if (status == ConnectivityStatus.Offline) false else current.nextPage != null,
+            )
+        }
+        if (wasOffline && status == ConnectivityStatus.Online) {
+            refresh()
         }
     }
 

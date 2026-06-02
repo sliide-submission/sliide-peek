@@ -12,6 +12,7 @@ import com.sliide.useractivity.data.repository.PostRepositoryImpl
 import com.sliide.useractivity.data.repository.TodoRepositoryImpl
 import com.sliide.useractivity.data.repository.UserRepositoryImpl
 import com.sliide.useractivity.domain.auth.BearerTokenProvider
+import com.sliide.useractivity.domain.connectivity.ConnectivityMonitor
 import com.sliide.useractivity.domain.repository.PostRepository
 import com.sliide.useractivity.domain.repository.TodoRepository
 import com.sliide.useractivity.domain.repository.UserRepository
@@ -22,6 +23,8 @@ import com.sliide.useractivity.presentation.users.CreateUserUseCaseImpl
 import com.sliide.useractivity.presentation.users.DeleteUserUseCase
 import com.sliide.useractivity.presentation.users.DeleteUserUseCaseImpl
 import com.sliide.useractivity.presentation.users.GetSmartUserFeedUseCase
+import com.sliide.useractivity.presentation.users.LoadOlderUsersUseCase
+import com.sliide.useractivity.presentation.users.LoadOlderUsersUseCaseImpl
 import com.sliide.useractivity.presentation.users.LoadUserFeedUseCase
 import com.sliide.useractivity.presentation.users.UserFeedViewModel
 import io.ktor.client.HttpClient
@@ -37,11 +40,19 @@ fun appModule(databaseDriverFactory: DatabaseDriverFactory): Module = module {
     single<SqlDriver> { databaseDriverFactory.createDriver() }
     single { SliidePeekDatabase(get()) }
     single<UserCacheDataSource> { SqlDelightUserCacheDataSource(get()) }
+    single<ConnectivityMonitor> { databaseDriverFactory.createConnectivityMonitor() }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }
     single<PostRepository> { PostRepositoryImpl(get()) }
     single<TodoRepository> { TodoRepositoryImpl(get()) }
     factory<LoadUserFeedUseCase> {
         GetSmartUserFeedUseCase(
+            userRepository = get(),
+            userCacheDataSource = get(),
+            clock = get(),
+        )
+    }
+    factory<LoadOlderUsersUseCase> {
+        LoadOlderUsersUseCaseImpl(
             userRepository = get(),
             userCacheDataSource = get(),
             clock = get(),
@@ -63,10 +74,12 @@ fun appModule(databaseDriverFactory: DatabaseDriverFactory): Module = module {
     factory { params ->
         UserFeedViewModel(
             loadUserFeed = get(),
+            loadOlderUsers = get(),
             createUser = get(),
             deleteUser = get(),
             scope = params.get<CoroutineScope>(),
             clock = get(),
+            connectivityMonitor = get(),
         )
     }
 }

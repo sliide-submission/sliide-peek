@@ -41,6 +41,9 @@ class GetSmartUserFeedUseCaseTest {
         assertEquals(123_000, feed.users.first().fetchedAtMillis)
         assertFalse(feed.fromCache)
         assertEquals(123_000, feed.lastUpdatedMillis)
+        assertEquals(1, feed.currentPage)
+        assertEquals(3, feed.totalPages)
+        assertTrue(feed.hasNextPage)
         assertNotNull(cache.savedFeed)
     }
 
@@ -107,6 +110,10 @@ class GetSmartUserFeedUseCaseTest {
         var savedFeed: CachedUserFeed? = null
 
         override suspend fun replaceCachedFeed(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) {
+            savedFeed = CachedUserFeed(page, cachedAtMillis, fetchedAtMillis)
+        }
+
+        override suspend fun appendCachedPage(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) {
             savedFeed = CachedUserFeed(page, cachedAtMillis, fetchedAtMillis)
         }
 

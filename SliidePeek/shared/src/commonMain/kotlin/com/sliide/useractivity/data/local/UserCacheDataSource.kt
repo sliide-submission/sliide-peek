@@ -10,6 +10,12 @@ interface UserCacheDataSource {
         cachedAtMillis: Long,
     )
 
+    suspend fun appendCachedPage(
+        page: Page<User>,
+        fetchedAtMillis: Long,
+        cachedAtMillis: Long,
+    )
+
     suspend fun getCachedFeed(): CachedUserFeed?
 
     suspend fun insertCreatedUserAtTop(

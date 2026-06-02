@@ -57,6 +57,7 @@ class CreateUserUseCaseTest {
         var createdAtMillis: Long? = null
 
         override suspend fun replaceCachedFeed(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) = Unit
+        override suspend fun appendCachedPage(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) = Unit
         override suspend fun getCachedFeed(): CachedUserFeed? = null
         override suspend fun insertCreatedUserAtTop(user: User, createdAtMillis: Long, cachedAtMillis: Long) {
             insertedUser = user

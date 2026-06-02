@@ -28,6 +28,7 @@ fun ExpandedAppShell(
     userFeedState: UserFeedState,
     onUserFeedRefresh: () -> Unit,
     onUserFeedRetry: () -> Unit,
+    onLoadMoreUsers: () -> Unit,
     onAddUserClick: () -> Unit,
     onDismissAddUser: () -> Unit,
     onAddUserNameChanged: (String) -> Unit,
@@ -64,8 +65,10 @@ fun ExpandedAppShell(
                         onRefresh = onUserFeedRefresh,
                         onRetry = onUserFeedRetry,
                         onAddUserClick = onAddUserClick,
+                        onLoadMoreUsers = onLoadMoreUsers,
                         showFab = false,
                         compactRows = true,
+                        enableLongPress = false,
                         onUserLongPress = onUserLongPress,
                         modifier = Modifier.fillMaxSize(),
                     )

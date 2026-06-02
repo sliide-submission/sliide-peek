@@ -42,6 +42,7 @@ import com.sliide.useractivity.di.appModule
 import com.sliide.useractivity.presentation.users.UserFeedEvent
 import com.sliide.useractivity.presentation.users.UserFeedViewModel
 import com.sliide.useractivity.ui.navigation.AppNavigator
+import com.sliide.useractivity.ui.navigation.AppRoute
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
@@ -108,11 +109,6 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
         }
     }
 
-    val onUserClick: (Long) -> Unit = { userId ->
-        userFeedViewModel.clearHighlight()
-        navigator.selectUser(userId)
-    }
-
     Box(Modifier.fillMaxSize()) {
         BoxWithConstraints {
             when (appLayoutClassForWidth(maxWidth)) {
@@ -121,6 +117,7 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
                     userFeedState = userFeedState,
                     onUserFeedRefresh = userFeedViewModel::refresh,
                     onUserFeedRetry = userFeedViewModel::retry,
+                    onLoadMoreUsers = userFeedViewModel::loadMoreUsers,
                     onAddUserClick = userFeedViewModel::openAddUser,
                     onDismissAddUser = userFeedViewModel::dismissAddUser,
                     onAddUserNameChanged = userFeedViewModel::onAddUserNameChanged,
@@ -128,7 +125,10 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
                     onAddUserGenderSelected = userFeedViewModel::onAddUserGenderSelected,
                     onAddUserStatusSelected = userFeedViewModel::onAddUserStatusSelected,
                     onSubmitAddUser = userFeedViewModel::submitAddUser,
-                    onUserClick = onUserClick,
+                    onUserClick = { userId ->
+                        userFeedViewModel.clearHighlight()
+                        navigator.navigate(AppRoute.UserDetail(userId))
+                    },
                     onUserLongPress = userFeedViewModel::requestDeleteUser,
                 )
                 AppLayoutClass.Expanded -> ExpandedAppShell(
@@ -137,6 +137,7 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
                     userFeedState = userFeedState,
                     onUserFeedRefresh = userFeedViewModel::refresh,
                     onUserFeedRetry = userFeedViewModel::retry,
+                    onLoadMoreUsers = userFeedViewModel::loadMoreUsers,
                     onAddUserClick = userFeedViewModel::openAddUser,
                     onDismissAddUser = userFeedViewModel::dismissAddUser,
                     onAddUserNameChanged = userFeedViewModel::onAddUserNameChanged,
@@ -144,7 +145,10 @@ fun AppRoot(databaseDriverFactory: DatabaseDriverFactory) {
                     onAddUserGenderSelected = userFeedViewModel::onAddUserGenderSelected,
                     onAddUserStatusSelected = userFeedViewModel::onAddUserStatusSelected,
                     onSubmitAddUser = userFeedViewModel::submitAddUser,
-                    onUserClick = onUserClick,
+                    onUserClick = { userId ->
+                        userFeedViewModel.clearHighlight()
+                        navigator.selectUser(userId)
+                    },
                     onUserLongPress = userFeedViewModel::requestDeleteUser,
                     onDeleteUserClick = userFeedViewModel::requestDeleteUser,
                 )

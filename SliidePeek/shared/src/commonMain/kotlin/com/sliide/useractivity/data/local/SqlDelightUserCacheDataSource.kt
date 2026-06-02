@@ -28,7 +28,7 @@ class SqlDelightUserCacheDataSource(
                 )
             }
             queries.replaceMetadata(
-                cache_key = LAST_PAGE_CACHE_KEY,
+                cache_key = FEED_CACHE_KEY,
                 page = page.page.toLong(),
                 per_page = page.perPage.toLong(),
                 total_pages = page.totalPages.toLong(),
@@ -37,8 +37,43 @@ class SqlDelightUserCacheDataSource(
         }
     }
 
+    override suspend fun appendCachedPage(
+        page: Page<User>,
+        fetchedAtMillis: Long,
+        cachedAtMillis: Long,
+    ) {
+        queries.transaction {
+            val existingRows = queries.selectCachedFeed().executeAsList()
+            val existingIds = existingRows.map { it.id }.toSet()
+            var nextPosition = existingRows.size.toLong()
+            page.items.forEach { user ->
+                if (user.id !in existingIds) {
+                    queries.insertUser(
+                        id = user.id,
+                        name = user.name,
+                        email = user.email,
+                        gender = user.gender.cacheValue(),
+                        status = user.status.cacheValue(),
+                        fetched_at_millis = fetchedAtMillis,
+                        cached_at_millis = cachedAtMillis,
+                        position = nextPosition,
+                    )
+                    nextPosition += 1
+                }
+            }
+            val metadata = queries.selectMetadata(FEED_CACHE_KEY).executeAsOneOrNull()
+            queries.replaceMetadata(
+                cache_key = FEED_CACHE_KEY,
+                page = page.page.toLong(),
+                per_page = metadata?.per_page ?: page.perPage.toLong(),
+                total_pages = page.totalPages.toLong(),
+                cached_at_millis = cachedAtMillis,
+            )
+        }
+    }
+
     override suspend fun getCachedFeed(): CachedUserFeed? {
-        val metadata = queries.selectMetadata(LAST_PAGE_CACHE_KEY).executeAsOneOrNull() ?: return null
+        val metadata = queries.selectMetadata(FEED_CACHE_KEY).executeAsOneOrNull() ?: return null
         val rows = queries.selectCachedFeed().executeAsList()
         if (rows.isEmpty()) return null
 
@@ -60,7 +95,7 @@ class SqlDelightUserCacheDataSource(
         cachedAtMillis: Long,
     ) {
         queries.transaction {
-            val metadata = queries.selectMetadata(LAST_PAGE_CACHE_KEY).executeAsOneOrNull()
+            val metadata = queries.selectMetadata(FEED_CACHE_KEY).executeAsOneOrNull()
             queries.deleteUserById(user.id)
             queries.incrementFeedPositions()
             queries.insertUser(
@@ -76,7 +111,7 @@ class SqlDelightUserCacheDataSource(
             val perPage = metadata?.per_page ?: DEFAULT_LOCAL_PER_PAGE
             queries.trimFeedToLimit(perPage)
             queries.replaceMetadata(
-                cache_key = LAST_PAGE_CACHE_KEY,
+                cache_key = FEED_CACHE_KEY,
                 page = metadata?.page ?: 1,
                 per_page = perPage,
                 total_pages = metadata?.total_pages ?: 1,
@@ -90,7 +125,7 @@ class SqlDelightUserCacheDataSource(
     }
 
     private companion object {
-        const val LAST_PAGE_CACHE_KEY = "users:last-page"
+        const val FEED_CACHE_KEY = "users:latest-feed"
         const val DEFAULT_LOCAL_PER_PAGE = 20L
     }
 }
