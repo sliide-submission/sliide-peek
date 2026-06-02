@@ -38,6 +38,31 @@ class UserRepositoryImplTest {
     }
 
     @Test
+    fun `sends token when loading users if token is available`() = runTest {
+        var capturedAuthorization: String? = null
+        val repository = UserRepositoryImpl(
+            GorestApiClient(
+                HttpClient(MockEngine) {
+                    expectSuccess = true
+                    engine {
+                        addHandler { request ->
+                            capturedAuthorization = request.headers[HttpHeaders.Authorization]
+                            respond(Fixtures.USERS_PAGE_1, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+                        }
+                    }
+                    install(ContentNegotiation) { json(gorestJson) }
+                },
+                "https://example.test/public/v2",
+            ),
+            FakeTokenProvider("token"),
+        )
+
+        repository.getUsers(page = 1, perPage = 2)
+
+        assertEquals("Bearer token", capturedAuthorization)
+    }
+
+    @Test
     fun `creates user on success`() = runTest {
         val repository = UserRepositoryImpl(
             GorestApiClient(

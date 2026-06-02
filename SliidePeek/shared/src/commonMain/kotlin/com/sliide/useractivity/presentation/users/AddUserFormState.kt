@@ -12,6 +12,8 @@ data class AddUserFormState(
     val emailError: String? = null,
     val genderError: String? = null,
     val statusError: String? = null,
+    val nameTouched: Boolean = false,
+    val emailTouched: Boolean = false,
     val isSubmitting: Boolean = false,
     val submitErrorMessage: String? = null,
 ) {
@@ -22,4 +24,8 @@ data class AddUserFormState(
         statusError == null &&
         name.isNotBlank() &&
         email.isNotBlank()
+
+    /** Field errors are only surfaced once the user has interacted with that field. */
+    val visibleNameError: String? = nameError.takeIf { nameTouched }
+    val visibleEmailError: String? = emailError.takeIf { emailTouched }
 }

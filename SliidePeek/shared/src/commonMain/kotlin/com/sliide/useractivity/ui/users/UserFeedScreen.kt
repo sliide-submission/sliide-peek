@@ -1,36 +1,34 @@
 package com.sliide.useractivity.ui.users
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sliide.useractivity.presentation.users.UserFeedState
+import com.sliide.useractivity.ui.components.BannerVariant
 import com.sliide.useractivity.ui.components.ContentState
 import com.sliide.useractivity.ui.components.ContentStateContainer
+import com.sliide.useractivity.ui.components.SignalBanner
+import com.sliide.useractivity.ui.components.SignalIcons
 import com.sliide.useractivity.ui.components.StateMessage
+import com.sliide.useractivity.ui.components.StateTone
 import com.sliide.useractivity.ui.shell.appBodyPaddingValues
+import com.sliide.useractivity.ui.theme.Radius
 
 @Composable
 fun UserFeedScreen(
@@ -50,11 +48,11 @@ fun UserFeedScreen(
             state = state,
             selectedUserId = selectedUserId,
             onUserClick = onUserClick,
-            onRefresh = onRefresh,
             onRetry = onRetry,
             onAddUserClick = onAddUserClick,
             compactRows = compactRows,
             onUserLongPress = onUserLongPress,
+            fabClearance = showFab && state.shouldShowFab,
             modifier = Modifier.fillMaxSize(),
         )
         if (showFab && state.shouldShowFab) {
@@ -62,11 +60,13 @@ fun UserFeedScreen(
                 onClick = onAddUserClick,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(18.dp),
-                containerColor = MaterialTheme.colorScheme.onSurface,
-                contentColor = MaterialTheme.colorScheme.surface,
+                    .padding(16.dp),
+                shape = RoundedCornerShape(Radius.xxl),
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
             ) {
-                Text("+", style = MaterialTheme.typography.headlineSmall)
+                Icon(SignalIcons.Plus, contentDescription = "Add user")
             }
         }
     }
@@ -77,24 +77,24 @@ private fun UserFeedContent(
     state: UserFeedState,
     selectedUserId: Long?,
     onUserClick: (Long) -> Unit,
-    onRefresh: () -> Unit,
     onRetry: () -> Unit,
     onAddUserClick: () -> Unit,
     compactRows: Boolean,
     onUserLongPress: (Long) -> Unit,
+    fabClearance: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(appBodyPaddingValues()),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         when {
             state.isLoading -> ContentStateContainer(
                 state = ContentState.Loading,
                 modifier = Modifier.fillMaxSize(),
-                loadingRows = 8,
+                loadingRows = 6,
             ) {}
 
             state.offlineMessage != null && state.users.isEmpty() -> NoInternetState(
@@ -115,39 +115,40 @@ private fun UserFeedContent(
             )
 
             else -> {
+                val listState = rememberLazyListState()
+                LaunchedEffect(state.users.firstOrNull()?.id, state.lastUpdatedLabel) {
+                    if (state.users.isNotEmpty()) {
+                        listState.animateScrollToItem(0)
+                    }
+                }
+
                 if (state.offlineMessage != null) {
-                    FeedStatusBanner(
+                    SignalBanner(
                         message = "Offline — showing cached users",
+                        variant = BannerVariant.Offline,
                         trailing = state.lastUpdatedLabel?.let { "updated $it" },
                     )
                 } else if (state.isRefreshing) {
-                    FeedStatusBanner(message = "Refreshing…")
+                    SignalBanner(message = "Refreshing…", variant = BannerVariant.Refreshing)
                 } else if (state.errorMessage != null) {
-                    FeedStatusBanner(message = state.errorMessage, isError = true)
+                    SignalBanner(message = state.errorMessage, variant = BannerVariant.Error)
                 }
-                Column(
-                    modifier = Modifier.animateContentSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = if (fabClearance) 84.dp else 8.dp),
                 ) {
-                    state.users.forEach { user ->
-                        key(user.id) {
-                            val transitionState = remember {
-                                MutableTransitionState(false).apply { targetState = true }
-                            }
-                            AnimatedVisibility(
-                                visibleState = transitionState,
-                                enter = fadeIn() + expandVertically(),
-                                exit = fadeOut() + shrinkVertically(),
-                            ) {
-                                UserFeedRow(
-                                    user = user,
-                                    selected = user.id == selectedUserId,
-                                    onClick = { onUserClick(user.id) },
-                                    onLongClick = { onUserLongPress(user.id) },
-                                    compact = compactRows,
-                                )
-                            }
-                        }
+                    items(state.users, key = { it.id }) { user ->
+                        UserFeedRow(
+                            user = user,
+                            selected = user.id == selectedUserId,
+                            highlighted = user.id == state.highlightedUserId,
+                            onClick = { onUserClick(user.id) },
+                            onLongClick = { onUserLongPress(user.id) },
+                            compact = compactRows,
+                            modifier = Modifier,
+                        )
                     }
                 }
             }
@@ -163,9 +164,11 @@ private fun EmptyFeedState(
     StateMessage(
         modifier = modifier,
         title = "No users yet",
-        body = "Add the first person to get started. They’ll appear at the top of the feed.",
-        symbol = "+",
+        body = "Add the first person to get started — they’ll appear right at the top of the feed.",
+        icon = SignalIcons.Users,
+        tone = StateTone.Accent,
         actionLabel = "Add user",
+        actionIcon = SignalIcons.Plus,
         onAction = onAddUserClick,
     )
 }
@@ -179,11 +182,13 @@ private fun ApiErrorState(
     StateMessage(
         modifier = modifier,
         title = "Couldn’t load users",
-        body = message.ifBlank { "Something went wrong on our side. Nothing was lost — try again." },
-        symbol = "⚠",
+        body = message.ifBlank { "Something went wrong on our side. Nothing was lost — give it another try." },
+        icon = SignalIcons.AlertTriangle,
+        tone = StateTone.Error,
+        code = "ERR · /v2/users",
         actionLabel = "Retry",
+        actionIcon = SignalIcons.Refresh,
         onAction = onRetry,
-        isError = true,
     )
 }
 
@@ -196,59 +201,15 @@ private fun NoInternetState(
     StateMessage(
         modifier = modifier,
         title = "You’re offline",
-        body = message.ifBlank { "No connection and nothing cached yet. Reconnect to load your users." },
-        symbol = "⚡",
+        body = message.ifBlank { "No connection, and nothing’s been cached yet. Reconnect to load your users." },
+        icon = SignalIcons.WifiOff,
+        tone = StateTone.Neutral,
+        code = "NO_NETWORK · cache empty",
         actionLabel = "Try again",
+        actionIcon = SignalIcons.Refresh,
+        ghostAction = true,
         onAction = onRetry,
     )
-}
-
-@Composable
-private fun FeedStatusBanner(
-    message: String,
-    modifier: Modifier = Modifier,
-    trailing: String? = null,
-    isError: Boolean = false,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = if (isError) {
-            MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant
-        },
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant,
-        ),
-    ) {
-        androidx.compose.foundation.layout.Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "●",
-                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelSmall,
-            )
-            Text(
-                text = message,
-                modifier = Modifier.weight(1f),
-                color = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.SemiBold,
-                style = MaterialTheme.typography.bodySmall,
-            )
-            if (trailing != null) {
-                Text(
-                    text = trailing,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelSmall,
-                )
-            }
-        }
-    }
 }
 
 private val UserFeedState.shouldShowFab: Boolean

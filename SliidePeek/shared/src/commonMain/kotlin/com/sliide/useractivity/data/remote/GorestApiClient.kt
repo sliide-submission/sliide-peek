@@ -23,11 +23,12 @@ internal class GorestApiClient(
     private val httpClient: HttpClient,
     private val baseUrl: String = DEFAULT_BASE_URL,
 ) {
-    suspend fun getUsers(page: Int, perPage: Int): GorestPage<UserDTO> {
+    suspend fun getUsers(page: Int, perPage: Int, bearerToken: String? = null): GorestPage<UserDTO> {
         val response = httpClient.get(baseUrl) {
             url { appendPathSegments("users") }
             parameter("page", page)
             parameter("per_page", perPage)
+            bearerToken?.let { token -> header(HttpHeaders.Authorization, "Bearer $token") }
         }
         return GorestPage(
             items = response.body(),

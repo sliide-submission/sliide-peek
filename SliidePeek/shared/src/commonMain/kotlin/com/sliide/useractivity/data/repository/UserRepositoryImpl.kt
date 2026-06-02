@@ -18,7 +18,11 @@ class UserRepositoryImpl internal constructor(
     private val bearerTokenProvider: BearerTokenProvider,
 ) : UserRepository {
     override suspend fun getUsers(page: Int, perPage: Int): AppResult<Page<User>> = repositoryCall {
-        val response = apiClient.getUsers(page = page, perPage = perPage)
+        val response = apiClient.getUsers(
+            page = page,
+            perPage = perPage,
+            bearerToken = bearerTokenProvider.getToken(),
+        )
         Page(
             items = response.items.map { it.toDomain() },
             page = response.page,

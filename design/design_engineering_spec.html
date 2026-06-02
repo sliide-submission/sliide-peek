@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management System — Engineering Spec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f7f5;--surf:#ffffff;--ink:#14151a;--ink2:#5d5f66;--ink3:#9a9ca3;
+    --line:#e6e7ea;--line2:#eff0f2;--accent:#2d5bff;--accent-soft:#e9eeff;
+    --green:#17935a;--green-bg:#e6f4ec;--amber:#c07a12;--amber-bg:#f7eedd;--danger:#d24b4b;--danger-bg:#fbecec;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Space Grotesk',sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 40px 120px;}
+
+  header .kick{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);}
+  header h1{font-size:38px;font-weight:700;letter-spacing:-.025em;margin:8px 0 10px;}
+  header p{font-size:15px;line-height:1.65;color:var(--ink2);max-width:720px;margin:0;}
+  header .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  header .pill{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--ink2);background:var(--surf);border:1px solid var(--line);padding:6px 11px;border-radius:6px;}
+
+  section{margin-top:60px;}
+  .sh{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:22px;}
+  .sh .n{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);}
+  .sh h2{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0;}
+  .sh .note{margin-left:auto;font-size:12.5px;color:var(--ink3);}
+
+  p.lead{font-size:14px;line-height:1.65;color:var(--ink2);max-width:760px;margin:0 0 20px;}
+  p.lead strong{color:var(--ink);}
+
+  /* table */
+  .tbl{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surf);width:100%;}
+  .tbl .thead,.trow{display:grid;align-items:stretch;}
+  .tbl .thead{background:var(--line2);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);}
+  .tbl .thead>div{padding:11px 14px;}
+  .trow{border-top:1px solid var(--line);}
+  .trow>div{padding:12px 14px;font-size:12.5px;color:var(--ink2);line-height:1.5;border-right:1px solid var(--line2);}
+  .trow>div:last-child{border-right:none;}
+  .trow .k{font-weight:600;color:var(--ink);}
+  .trow code,.lead code,li code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--line2);padding:1px 5px;border-radius:4px;color:var(--ink);}
+
+  .cols-state{grid-template-columns:1.1fr 1.3fr 1.7fr 1.2fr;}
+  .cols-val{grid-template-columns:.8fr 1.6fr 1fr 1.6fr;}
+  .cols-api{grid-template-columns:.6fr 1.4fr 1.6fr;}
+  .cols-field{grid-template-columns:.9fr .7fr 1.3fr 1.5fr;}
+  .cols-copy{grid-template-columns:1fr 2fr;}
+
+  .badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:4px;}
+  .badge.ok{color:var(--green);background:var(--green-bg);}
+  .badge.warn{color:var(--amber);background:var(--amber-bg);}
+  .badge.err{color:var(--danger);background:var(--danger-bg);}
+  .badge.acc{color:var(--accent);background:var(--accent-soft);}
+
+  /* steps */
+  .steps{counter-reset:s;display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surf);}
+  .step{display:flex;gap:14px;padding:14px 16px;border-top:1px solid var(--line2);}
+  .step:first-child{border-top:none;}
+  .step .si{counter-increment:s;flex:0 0 auto;width:24px;height:24px;border-radius:7px;background:var(--accent-soft);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+  .step .si::before{content:counter(s);}
+  .step .sx{font-size:13px;line-height:1.55;color:var(--ink2);}
+  .step .sx b{color:var(--ink);font-weight:600;}
+
+  .callout{border:1px solid var(--amber);background:var(--amber-bg);border-radius:10px;padding:14px 16px;margin-top:18px;font-size:12.5px;line-height:1.6;color:#7a5108;}
+  .callout strong{color:#5e3e06;}
+  .callout.acc{border-color:var(--accent);background:var(--accent-soft);color:#1c3aa8;}
+  .callout.acc strong{color:#13267a;}
+
+  .code{background:#0e0f13;border-radius:10px;padding:20px 22px;overflow:auto;border:1px solid #262932;margin-top:6px;}
+  .code pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#d3d5da;white-space:pre;}
+  .code .cm{color:#62656e;}.code .kw{color:#5b82ff;}.code .st{color:#34c77b;}.code .nm{color:#e0a33a;}
+
+  ul.clean{margin:0;padding-left:18px;}
+  ul.clean li{font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:7px;}
+  ul.clean li b{color:var(--ink);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media(max-width:780px){.grid2{grid-template-columns:1fr;}}
+  .subh{font-size:13px;font-weight:700;margin:22px 0 10px;letter-spacing:-.01em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kick">// signal · engineering spec</div>
+    <h1>Behaviour, API &amp; copy</h1>
+    <p>The logic the visuals can’t carry: state transitions, validation rules, optimistic add/delete + undo semantics, offline caching, the API contract, and the exact copy for every state. Pairs with the <span class="mono" style="font-size:13px;">Design Tokens &amp; Handoff v2</span> sheet (colours, type, components, motion) and the <span class="mono" style="font-size:13px;">Hi-Fi</span> canvas (visual truth). Target stack: <strong>Kotlin Multiplatform + Compose</strong>, Material 3 base.</p>
+    <div class="meta">
+      <span class="pill">Scope · Feed · Add · Delete+Undo · Offline</span>
+      <span class="pill">API · GoRest v2 (assumed)</span>
+      <span class="pill">Undo window · 5s</span>
+      <span class="pill">Optimistic add &amp; delete</span>
+    </div>
+  </header>
+
+  <!-- 01 state inventory -->
+  <section>
+    <div class="sh"><span class="n">01</span><h2>Feed state machine</h2><span class="note">one shell, mutually-exclusive states</span></div>
+    <p class="lead">The feed is a single screen that resolves to exactly one state. <strong>Loading</strong> and <strong>Refreshing</strong> differ: loading shows shimmer with no data; refreshing keeps existing rows in place. <strong>Offline</strong> branches on whether a cache exists.</p>
+    <div class="tbl">
+      <div class="thead cols-state"><div>State</div><div>Entered when</div><div>Shows</div><div>Primary action</div></div>
+      <div class="trow cols-state"><div class="k">Loading</div><div>First load, no cache</div><div>6 shimmer rows (row geometry)</div><div>—</div></div>
+      <div class="trow cols-state"><div class="k">Populated</div><div>Fetch success / cache hit</div><div>User rows, newest first</div><div>FAB · long-press row</div></div>
+      <div class="trow cols-state"><div class="k">Empty</div><div>Fetch OK, <code>0</code> users</div><div>“No users yet” + Add CTA</div><div>Add user</div></div>
+      <div class="trow cols-state"><div class="k">API error</div><div>Non-2xx / parse fail, no cache</div><div>Error block + code</div><div>Retry</div></div>
+      <div class="trow cols-state"><div class="k">No internet · no cache</div><div>Offline &amp; cache empty</div><div>Offline block</div><div>Try again</div></div>
+      <div class="trow cols-state"><div class="k">Offline · cached</div><div>Offline &amp; cache present</div><div>Banner + cached rows + “updated N ago”</div><div>FAB (queues) · Try again</div></div>
+      <div class="trow cols-state"><div class="k">Refreshing</div><div>Pull-to-refresh on populated</div><div>Existing rows + busy banner/spinner</div><div>—</div></div>
+    </div>
+    <div class="callout acc"><strong>Precedence:</strong> cache beats error — if a fetch fails but a cache exists, stay on <code>Offline · cached</code> (with a non-blocking “couldn’t refresh” toast), never drop to the error block. Only show error/no-cache states when there is genuinely nothing to display.</div>
+  </section>
+
+  <!-- 02 validation -->
+  <section>
+    <div class="sh"><span class="n">02</span><h2>Add-user validation</h2><span class="note">real-time, inline</span></div>
+    <p class="lead"><strong>When:</strong> validate a field <strong>on blur</strong> and then live <strong>on every change</strong> once it has been blurred once (don’t shout while the user is still typing the first time). The submit button stays disabled until name + email are both valid.</p>
+    <div class="tbl">
+      <div class="thead cols-val"><div>Field</div><div>Rule</div><div>Required</div><div>Error copy</div></div>
+      <div class="trow cols-val"><div class="k">Name</div><div>Trimmed length <code>2–60</code>; not blank</div><div><span class="badge err">Yes</span></div><div>“Enter a name (2+ characters)”</div></div>
+      <div class="trow cols-val"><div class="k">Email</div><div>Matches email pattern; <code>≤254</code> chars; lowercased on submit</div><div><span class="badge err">Yes</span></div><div>“Enter a valid email address”</div></div>
+      <div class="trow cols-val"><div class="k">Gender</div><div>One of <code>female · male · other</code></div><div><span class="badge ok">Default</span></div><div>— (pre-selected: Female)</div></div>
+      <div class="trow cols-val"><div class="k">Status</div><div>One of <code>active · inactive</code></div><div><span class="badge ok">Default</span></div><div>— (pre-selected: Active)</div></div>
+    </div>
+    <div class="callout"><strong>Server-side conflicts:</strong> GoRest rejects duplicate emails with <code>422 · "email has already been taken"</code>. Surface that on the email field (not a generic banner): “This email is already in use.” Map any other field-level 422 to its field.</div>
+    <p class="subh">Email pattern (pragmatic, not RFC-exhaustive)</p>
+    <div class="code"><pre><span class="cm">// good enough for a form; the server is the source of truth</span>
+<span class="kw">val</span> EMAIL = Regex(<span class="st">"""^[^\s@]+@[^\s@]+\.[^\s@]{2,}$"""</span>)</pre></div>
+  </section>
+
+  <!-- 03 add flow -->
+  <section>
+    <div class="sh"><span class="n">03</span><h2>Add-user flow</h2><span class="note">optimistic, top-of-feed</span></div>
+    <div class="steps">
+      <div class="step"><span class="si"></span><span class="sx">FAB tap opens the <b>modal bottom sheet</b> (phone) or switches the action panel to the form (tablet). Fields reset; defaults pre-selected.</span></div>
+      <div class="step"><span class="si"></span><span class="sx">On valid submit, button enters <b>loading</b> and the whole form <b>locks</b> (no double-submit). <code>POST /users</code> fires.</span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Success:</b> sheet dismisses, the returned user is <b>prepended</b> to the feed, count increments, the new row gets a brief amber highlight, and a “{name} added” snackbar confirms (~3s, non-blocking).</span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Error:</b> sheet stays open, <b>all input preserved</b>, inline error banner inside the sheet, button → “Try again”. Field-level 422s attach to their field instead.</span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Offline:</b> queue the create locally, insert an optimistic row tagged pending-sync, and reconcile on reconnect. (Flagged — confirm whether queue-offline is in scope for v1.)</span></div>
+    </div>
+    <div class="callout acc"><strong>Ordering:</strong> the feed sorts newest-first by “last active”; a just-created user is treated as <code>just now</code>, so it naturally lands at the top. Don’t hard-pin — let the sort do it.</div>
+  </section>
+
+  <!-- 04 delete + undo -->
+  <section>
+    <div class="sh"><span class="n">04</span><h2>Delete &amp; undo</h2><span class="note">optimistic with a commit timer</span></div>
+    <div class="steps">
+      <div class="step"><span class="si"></span><span class="sx"><b>Long-press</b> a row (~450ms): row depresses + ripple + one haptic tick, then the <b>AlertDialog</b> confirms. (First run shows a one-time hint: “Hold a user to manage”.)</span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Confirm:</b> row is removed from the list immediately (collapse animation) but kept in memory with its original index. A <b>snackbar with Undo</b> appears, countdown bar = the window.</span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Undo</b> (within 5s): re-insert the cached row at its <b>original index</b>, brief highlight, dismiss snackbar. <u>No API call is ever made.</u></span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Window expires</b> (or another delete starts): commit — fire <code>DELETE /users/{id}</code>. Success is silent (already gone from UI).</span></div>
+      <div class="step"><span class="si"></span><span class="sx"><b>Delete fails</b> at commit: <b>re-insert</b> the row at its index and show an error snackbar “Couldn’t delete — {name} restored” with <b>Retry</b>.</span></div>
+    </div>
+    <div class="grid2" style="margin-top:18px;">
+      <div>
+        <p class="subh">Edge rules</p>
+        <ul class="clean">
+          <li><b>Rapid deletes:</b> committing the previous delete immediately if a new one starts (single in-flight undo) keeps it simple; or stack snackbars — pick one and document. Recommend <b>commit-on-next</b>.</li>
+          <li><b>Leaving the screen</b> with a pending undo → commit the delete.</li>
+          <li><b>Offline delete:</b> remove locally, queue the <code>DELETE</code>, reconcile on reconnect.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="subh">Why optimistic</p>
+        <ul class="clean">
+          <li>The list feels instant; the network call is deferred to the moment undo is no longer possible.</li>
+          <li>Undo is a pure local operation → always fast, works offline.</li>
+          <li>Failure is recoverable and visible, never a silent data loss.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 offline + cache -->
+  <section>
+    <div class="sh"><span class="n">05</span><h2>Offline &amp; caching</h2><span class="note">graceful, never blank</span></div>
+    <p class="lead">Cache the last successful <code>GET /users</code> response locally (e.g. <strong>SQLDelight</strong> or a serialized store) together with a <strong>fetchedAt</strong> timestamp. The feed reads cache-first, then refreshes from network when online.</p>
+    <ul class="clean">
+      <li><b>Cache-first render:</b> show cached rows instantly, kick off a background refresh, swap in fresh data on success.</li>
+      <li><b>Offline + cache:</b> persistent neutral banner “Offline — showing cached users” + <code>fetchedAt</code> as relative “updated N ago”. Feed stays interactive; mutations queue.</li>
+      <li><b>Offline + no cache:</b> the dedicated no-cache state — honest, with Try again.</li>
+      <li><b>Connectivity:</b> observe platform connectivity; on regain, auto-refresh and drain the mutation queue.</li>
+      <li><b>“updated N ago”</b> derives from <code>fetchedAt</code>, not per-row — it’s the sync time, distinct from each user’s “last active”.</li>
+    </ul>
+    <div class="callout"><strong>Don’t conflate the two timestamps.</strong> Banner “updated 12 min ago” = when the <em>feed</em> last synced. Row “5 min ago” = that <em>user’s</em> last-active. They answer different questions.</div>
+  </section>
+
+  <!-- 06 timestamps -->
+  <section>
+    <div class="sh"><span class="n">06</span><h2>Relative timestamps</h2><span class="note">last-active formatting</span></div>
+    <div class="grid2">
+      <div>
+        <div class="tbl">
+          <div class="thead" style="grid-template-columns:1fr 1fr;"><div>Age</div><div>Renders</div></div>
+          <div class="trow" style="grid-template-columns:1fr 1fr;"><div>&lt; 60s</div><div class="k">just now</div></div>
+          <div class="trow" style="grid-template-columns:1fr 1fr;"><div>&lt; 60 min</div><div class="k">N min ago</div></div>
+          <div class="trow" style="grid-template-columns:1fr 1fr;"><div>&lt; 24 h</div><div class="k">N h ago</div></div>
+          <div class="trow" style="grid-template-columns:1fr 1fr;"><div>&lt; 7 d</div><div class="k">N d ago</div></div>
+          <div class="trow" style="grid-template-columns:1fr 1fr;"><div>≥ 7 d</div><div class="k">DD MMM (e.g. 18 May)</div></div>
+        </div>
+      </div>
+      <div>
+        <ul class="clean">
+          <li>Compute client-side from the source instant; recompute on recomposition / refresh.</li>
+          <li>Singular/plural handled by the platform (<code>1 min ago</code>, not <code>1 mins</code>).</li>
+          <li>Use device locale &amp; timezone for the absolute fallback.</li>
+          <li>Newly added users read <code>just now</code>.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout"><strong>API gap — read this.</strong> GoRest user objects do <strong>not</strong> include a last-active/updated timestamp (no <code>created_at</code>/<code>updated_at</code> on <code>/users</code>). So “last active” has no real source. Options, in order of preference: <strong>(a)</strong> if you control/seed the backend, add an <code>updated_at</code> field; <strong>(b)</strong> store a local <code>firstSeen/lastSeen</code> per id as the device observes them; <strong>(c)</strong> for the demo, derive a stable pseudo-time from the id. Decide before build — it affects the data layer. The UI treatment is identical regardless of source.</div>
+  </section>
+
+  <!-- 07 API contract -->
+  <section>
+    <div class="sh"><span class="n">07</span><h2>API contract</h2><span class="note">GoRest v2 · assumed — confirm</span></div>
+    <p class="lead">Assumed public API: <code>https://gorest.co.in/public/v2</code> (its <code>gender</code> + <code>active/inactive status</code> model matches the brief exactly). Writes need a bearer token. <strong>If the real challenge specifies a different API, tell me and I’ll re-map.</strong></p>
+    <div class="tbl">
+      <div class="thead cols-api"><div>Method</div><div>Path</div><div>Use</div></div>
+      <div class="trow cols-api"><div class="k mono">GET</div><div class="mono">/users?page=1&amp;per_page=</div><div>Feed — latest users (page 1; GoRest returns newest-first). No last-page discovery.</div></div>
+      <div class="trow cols-api"><div class="k mono">POST</div><div class="mono">/users</div><div>Add user — body: name, email, gender, status</div></div>
+      <div class="trow cols-api"><div class="k mono">DELETE</div><div class="mono">/users/{id}</div><div>Commit a delete after the undo window</div></div>
+      <div class="trow cols-api"><div class="k mono">GET</div><div class="mono">/users/{id}</div><div>Optional — refresh a single selected user (tablet panel)</div></div>
+    </div>
+    <p class="subh">Field map</p>
+    <div class="tbl">
+      <div class="thead cols-field"><div>API field</div><div>Type</div><div>UI usage</div><div>Notes</div></div>
+      <div class="trow cols-field"><div class="k mono">id</div><div class="mono">number</div><div>Row key, avatar fallback, panel ID</div><div>Stable identity for undo/delete</div></div>
+      <div class="trow cols-field"><div class="k mono">name</div><div class="mono">string</div><div>Row title, avatar initials</div><div>Initials = first letters of first 2 words</div></div>
+      <div class="trow cols-field"><div class="k mono">email</div><div class="mono">string</div><div>Row subtitle (mono), panel</div><div>Truncate with ellipsis; never wrap</div></div>
+      <div class="trow cols-field"><div class="k mono">gender</div><div class="mono">enum</div><div>Panel chip; Add form selector</div><div><code>male</code> / <code>female</code> (API limit)</div></div>
+      <div class="trow cols-field"><div class="k mono">status</div><div class="mono">enum</div><div>Status chip; Add form selector</div><div><code>active</code> / <code>inactive</code></div></div>
+      <div class="trow cols-field"><div class="k mono">—</div><div class="mono">—</div><div>“Last active” relative time</div><div><span class="badge warn">Derived</span> see §06 API gap</div></div>
+    </div>
+    <div class="callout"><strong>“Other” gender:</strong> the design offers Female / Male / Other, but GoRest only accepts <code>male</code>/<code>female</code>. Either drop “Other” to match the API, or keep it in the model and map on submit. Confirm the choice.</div>
+    <p class="subh">Sample shapes</p>
+    <div class="code"><pre><span class="cm">// GET /users → 200</span>
+[ { <span class="nm">"id"</span>: <span class="st">7720</span>, <span class="nm">"name"</span>: <span class="st">"Priya Nair"</span>, <span class="nm">"email"</span>: <span class="st">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6a1a1803130b44040b03182a0f120b071a060f44090507">[email&#160;protected]</a>"</span>,
+    <span class="nm">"gender"</span>: <span class="st">"female"</span>, <span class="nm">"status"</span>: <span class="st">"active"</span> }, ... ]
+
+<span class="cm">// POST /users  (Authorization: Bearer &lt;token&gt;)</span>
+{ <span class="nm">"name"</span>: <span class="st">"Maya Reed"</span>, <span class="nm">"email"</span>: <span class="st">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7e131f071f500c1b1b1a3e1b061f130e121b501d1113">[email&#160;protected]</a>"</span>,
+  <span class="nm">"gender"</span>: <span class="st">"female"</span>, <span class="nm">"status"</span>: <span class="st">"active"</span> }
+<span class="cm">// → 201 returns the created user (with id)  ·  422 = validation array</span>
+
+<span class="cm">// 422 body</span>
+[ { <span class="nm">"field"</span>: <span class="st">"email"</span>, <span class="nm">"message"</span>: <span class="st">"has already been taken"</span> } ]</pre></div>
+  </section>
+
+  <!-- 08 copy deck -->
+  <section>
+    <div class="sh"><span class="n">08</span><h2>Copy deck</h2><span class="note">every string, ready to localise</span></div>
+    <div class="tbl">
+      <div class="thead cols-copy"><div>Key</div><div>String</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.title</div><div>Users</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.empty.title</div><div>No users yet</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.empty.body</div><div>Add the first person to get started — they’ll appear right at the top of the feed.</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.empty.cta</div><div>Add user</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.error.title</div><div>Couldn’t load users</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.error.body</div><div>Something went wrong on our side. Nothing was lost — give it another try.</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.error.cta</div><div>Retry</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.noNet.title</div><div>You’re offline</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.noNet.body</div><div>No connection, and nothing’s been cached yet. Reconnect to load your users.</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.noNet.cta</div><div>Try again</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.offline.banner</div><div>Offline — showing cached users</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.offline.updated</div><div>updated {time} ago</div></div>
+      <div class="trow cols-copy"><div class="k mono">feed.refreshing</div><div>Refreshing…</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.title</div><div>Add user</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.field.name</div><div>Name</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.field.email</div><div>Email</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.field.gender</div><div>Gender</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.field.status</div><div>Status</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.err.name</div><div>Enter a name (2+ characters)</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.err.email</div><div>Enter a valid email address</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.err.emailTaken</div><div>This email is already in use.</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.submit / .loading</div><div>Add user / Adding…</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.error.banner</div><div>Couldn’t add user — please try again</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.error.cta</div><div>Try again</div></div>
+      <div class="trow cols-copy"><div class="k mono">add.success.snack</div><div>{name} added</div></div>
+      <div class="trow cols-copy"><div class="k mono">delete.confirm.title</div><div>Delete {name}?</div></div>
+      <div class="trow cols-copy"><div class="k mono">delete.confirm.body</div><div>This removes them from your feed. You can undo right after.</div></div>
+      <div class="trow cols-copy"><div class="k mono">delete.confirm.cancel / .confirm</div><div>Cancel / Delete</div></div>
+      <div class="trow cols-copy"><div class="k mono">delete.snack / .undo</div><div>{name} deleted / Undo</div></div>
+      <div class="trow cols-copy"><div class="k mono">delete.failed.snack / .retry</div><div>Couldn’t delete — {name} restored / Retry</div></div>
+      <div class="trow cols-copy"><div class="k mono">longpress.hint</div><div>Hold a user to manage</div></div>
+      <div class="trow cols-copy"><div class="k mono">panel.empty.title / .body</div><div>Select a user / Pick someone from the list to see their details and manage them — or use + to add a new user.</div></div>
+    </div>
+  </section>
+
+  <!-- 09 a11y -->
+  <section>
+    <div class="sh"><span class="n">09</span><h2>Accessibility</h2><span class="note">non-negotiable</span></div>
+    <div class="grid2">
+      <div>
+        <p class="subh">Perception</p>
+        <ul class="clean">
+          <li><b>Colour never alone:</b> status = chip + label; validity = icon + border + helper text.</li>
+          <li>Contrast pairs in the tokens sheet meet <b>WCAG AA</b> in both themes (verify <code>ink-2</code> on <code>surface</code>).</li>
+          <li>Honour system <b>Dark Mode</b> and <b>Reduce Motion</b> (see motion table).</li>
+          <li>Respect dynamic type — rows wrap/truncate gracefully (see Hi-Fi edge cases).</li>
+        </ul>
+      </div>
+      <div>
+        <p class="subh">Interaction</p>
+        <ul class="clean">
+          <li>Touch targets <b>≥ 48dp</b>; row is one large target.</li>
+          <li><b>Long-press needs an alternative</b> for a11y: expose Delete via the row’s accessibility actions (and the visible button on tablet).</li>
+          <li>Snackbar Undo must be reachable — give the undo window enough time and announce via <code>liveRegion</code>.</li>
+          <li>Content descriptions on FAB (“Add user”), avatar, refresh, and the ✕ / chevrons.</li>
+          <li>Focus moves into the sheet/dialog on open and restores on close.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 open questions -->
+  <section>
+    <div class="sh"><span class="n">10</span><h2>Open decisions</h2><span class="note">confirm before build</span></div>
+    <ul class="clean">
+      <li><b>API:</b> is GoRest correct, or a different endpoint? Affects auth, paging, and the field map.</li>
+      <li><b>“Last active” source</b> (§06) — real field, locally observed, or derived for demo?</li>
+      <li><b>Gender “Other”</b> — keep in UI (and map) or drop to match the API’s male/female?</li>
+      <li><b>Offline mutations</b> — is queue-and-reconcile in v1, or is offline read-only?</li>
+      <li><b>Rapid deletes</b> — commit-on-next (recommended) vs. stacked undo snackbars?</li>
+      <li><b>Edit user</b> — the tablet panel shows an Edit affordance; in scope, or remove for now?</li>
+    </ul>
+  </section>
+
+</div>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>

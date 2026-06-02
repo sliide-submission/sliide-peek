@@ -2,8 +2,10 @@ package com.sliide.useractivity.ui.shell
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -14,6 +16,7 @@ import com.sliide.useractivity.ui.components.AppTopBar
 import com.sliide.useractivity.ui.navigation.AppNavigator
 import com.sliide.useractivity.ui.navigation.AppRoute
 import com.sliide.useractivity.ui.navigation.title
+import com.sliide.useractivity.ui.theme.Radius
 import com.sliide.useractivity.ui.users.AddUserForm
 import com.sliide.useractivity.ui.users.UserFeedScreen
 
@@ -31,6 +34,7 @@ fun CompactAppShell(
     onAddUserGenderSelected: (UserGender) -> Unit,
     onAddUserStatusSelected: (UserStatus) -> Unit,
     onSubmitAddUser: () -> Unit,
+    onUserClick: (Long) -> Unit,
     onUserLongPress: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -47,6 +51,7 @@ fun CompactAppShell(
                 showBack = navigator.canGoBack,
                 onBack = if (navigator.canGoBack) ({ navigator.goBack() }) else null,
                 onRefresh = if (route == AppRoute.Users) onUserFeedRefresh else null,
+                refreshing = route == AppRoute.Users && userFeedState.isRefreshing,
             )
         },
     ) {
@@ -54,7 +59,7 @@ fun CompactAppShell(
             AppRoute.Users -> UserFeedScreen(
                 state = userFeedState,
                 selectedUserId = navigator.selectedUserId,
-                onUserClick = navigator::selectUser,
+                onUserClick = onUserClick,
                 onRefresh = onUserFeedRefresh,
                 onRetry = onUserFeedRetry,
                 onAddUserClick = onAddUserClick,
@@ -86,7 +91,12 @@ fun CompactAppShell(
     }
 
     if (userFeedState.isAddUserVisible) {
-        ModalBottomSheet(onDismissRequest = onDismissAddUser) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = onDismissAddUser,
+            sheetState = sheetState,
+            shape = RoundedCornerShape(topStart = Radius.xl, topEnd = Radius.xl),
+        ) {
             AddUserForm(
                 state = userFeedState.addUserForm,
                 onNameChanged = onAddUserNameChanged,

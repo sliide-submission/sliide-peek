@@ -72,11 +72,11 @@ class UserFeedViewModel(
     }
 
     fun onAddUserNameChanged(value: String) {
-        updateAddUserForm { it.copy(name = value, submitErrorMessage = null) }
+        updateAddUserForm { it.copy(name = value, nameTouched = true, submitErrorMessage = null) }
     }
 
     fun onAddUserEmailChanged(value: String) {
-        updateAddUserForm { it.copy(email = value, submitErrorMessage = null) }
+        updateAddUserForm { it.copy(email = value, emailTouched = true, submitErrorMessage = null) }
     }
 
     fun onAddUserGenderSelected(gender: UserGender) {
@@ -88,7 +88,9 @@ class UserFeedViewModel(
     }
 
     fun submitAddUser() {
-        val form = addUserFormValidator.validate(_state.value.addUserForm)
+        val form = addUserFormValidator.validate(
+            _state.value.addUserForm.copy(nameTouched = true, emailTouched = true),
+        )
         if (!form.isSubmitEnabled) {
             _state.update { it.copy(addUserForm = form) }
             return
@@ -124,13 +126,24 @@ class UserFeedViewModel(
         _state.update { it.copy(deleteConfirmation = user) }
     }
 
+    fun clearHighlight() {
+        _state.update { it.copy(highlightedUserId = null) }
+    }
+
     fun cancelDeleteUser() {
         _state.update { it.copy(deleteConfirmation = null) }
     }
 
     fun confirmDeleteUser() {
-        val user = _state.value.deleteConfirmation ?: return
+        val current = _state.value
+        val user = current.deleteConfirmation ?: return
         _state.update { it.copy(deleteConfirmation = null) }
+        if (current.isOffline) {
+            scope.launch {
+                eventsChannel.send(UserFeedEvent.ShowMessage("You’re offline. Reconnect before deleting users."))
+            }
+            return
+        }
         beginOptimisticDelete(user)
     }
 
@@ -234,6 +247,7 @@ class UserFeedViewModel(
                         isLoading = false,
                         isRefreshing = false,
                         users = feed.users,
+                        highlightedUserId = null,
                         errorMessage = null,
                         offlineMessage = if (feed.fromCache) "Offline — showing cached users" else null,
                         lastUpdatedLabel = feed.lastUpdatedMillis?.let(::formatLastUpdated),

@@ -12,8 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.sliide.useractivity.ui.theme.signal
+import com.sliide.useractivity.ui.theme.signalType
 
 @Composable
 fun SectionHeader(
@@ -30,9 +31,8 @@ fun SectionHeader(
     ) {
         Text(
             text = if (count == null) title.uppercase() else "${title.uppercase()} · $count",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.signal.ink3,
+            style = MaterialTheme.signalType.eyebrow,
         )
         Box(
             modifier = Modifier

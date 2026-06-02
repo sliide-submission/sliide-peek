@@ -35,6 +35,7 @@ fun ExpandedAppShell(
     onAddUserGenderSelected: (UserGender) -> Unit,
     onAddUserStatusSelected: (UserStatus) -> Unit,
     onSubmitAddUser: () -> Unit,
+    onUserClick: (Long) -> Unit,
     onUserLongPress: (Long) -> Unit,
     onDeleteUserClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -45,8 +46,8 @@ fun ExpandedAppShell(
                 modifier = Modifier
                     .width(masterPaneWidthFor(availableWidth))
                     .fillMaxHeight(),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = MaterialTheme.colorScheme.background,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column(Modifier.fillMaxSize()) {
                     AppTopBar(
@@ -54,11 +55,12 @@ fun ExpandedAppShell(
                         subtitle = userFeedState.users.size.toString(),
                         onAdd = onAddUserClick,
                         onRefresh = onUserFeedRefresh,
+                        refreshing = userFeedState.isRefreshing,
                     )
                     UserFeedScreen(
                         state = userFeedState,
                         selectedUserId = navigator.selectedUserId,
-                        onUserClick = navigator::selectUser,
+                        onUserClick = onUserClick,
                         onRefresh = onUserFeedRefresh,
                         onRetry = onUserFeedRetry,
                         onAddUserClick = onAddUserClick,

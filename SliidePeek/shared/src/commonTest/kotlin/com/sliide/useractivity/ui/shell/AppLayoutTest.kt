@@ -17,11 +17,11 @@ class AppLayoutTest {
 
     @Test
     fun `master pane uses narrow width for constrained tablet`() {
-        assertEquals(260.dp, masterPaneWidthFor(760.dp))
+        assertEquals(280.dp, masterPaneWidthFor(760.dp))
     }
 
     @Test
     fun `master pane uses full width for wide tablet`() {
-        assertEquals(320.dp, masterPaneWidthFor(920.dp))
+        assertEquals(340.dp, masterPaneWidthFor(920.dp))
     }
 }

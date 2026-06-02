@@ -23,12 +23,12 @@ import kotlin.test.assertTrue
 
 class GetSmartUserFeedUseCaseTest {
     @Test
-    fun `fetches first page then last page from pagination metadata`() = runTest {
+    fun `fetches only the latest page - page 1 - and caches it`() = runTest {
         val cache = FakeUserCacheDataSource()
         val repository = FakeUserRepository(
             pages = mapOf(
-                1 to Page(listOf(user(1)), page = 1, perPage = 2, totalPages = 3),
-                3 to Page(listOf(user(30), user(31)), page = 3, perPage = 2, totalPages = 3),
+                // Page 1 = newest users on GoREST. Later pages must never be requested.
+                1 to Page(listOf(user(30), user(31)), page = 1, perPage = 2, totalPages = 3),
             ),
         )
         val useCase = GetSmartUserFeedUseCase(repository, cache, FixedClock(123_000), perPage = 2)
@@ -36,25 +36,12 @@ class GetSmartUserFeedUseCaseTest {
         val result = useCase()
 
         val feed = assertIs<AppResult.Success<UserFeedResult>>(result).value
-        assertEquals(listOf(1, 3), repository.requestedPages)
+        assertEquals(listOf(1), repository.requestedPages)
         assertEquals(listOf(30L, 31L), feed.users.map { it.id })
         assertEquals(123_000, feed.users.first().fetchedAtMillis)
         assertFalse(feed.fromCache)
         assertEquals(123_000, feed.lastUpdatedMillis)
         assertNotNull(cache.savedFeed)
-    }
-
-    @Test
-    fun `reuses first page when it is already the last page`() = runTest {
-        val repository = FakeUserRepository(
-            pages = mapOf(1 to Page(listOf(user(1)), page = 1, perPage = 20, totalPages = 1)),
-        )
-        val useCase = GetSmartUserFeedUseCase(repository, FakeUserCacheDataSource(), FixedClock(10_000))
-
-        val result = useCase()
-
-        assertIs<AppResult.Success<UserFeedResult>>(result)
-        assertEquals(listOf(1), repository.requestedPages)
     }
 
     @Test
@@ -119,11 +106,11 @@ class GetSmartUserFeedUseCaseTest {
     ) : UserCacheDataSource {
         var savedFeed: CachedUserFeed? = null
 
-        override suspend fun replaceLastPage(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) {
+        override suspend fun replaceCachedFeed(page: Page<User>, fetchedAtMillis: Long, cachedAtMillis: Long) {
             savedFeed = CachedUserFeed(page, cachedAtMillis, fetchedAtMillis)
         }
 
-        override suspend fun getLastPageFeed(): CachedUserFeed? = cachedFeed
+        override suspend fun getCachedFeed(): CachedUserFeed? = cachedFeed
 
         override suspend fun insertCreatedUserAtTop(user: User, createdAtMillis: Long, cachedAtMillis: Long) = Unit
         override suspend fun deleteUser(id: Long) = Unit

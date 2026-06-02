@@ -34,6 +34,50 @@ class GorestApiClientTest {
     }
 
     @Test
+    fun `sends bearer token when provided for users page`() = runTest {
+        var capturedAuthorization: String? = null
+        val apiClient = GorestApiClient(
+            httpClient = HttpClient(MockEngine) {
+                expectSuccess = true
+                engine {
+                    addHandler { request ->
+                        capturedAuthorization = request.headers[HttpHeaders.Authorization]
+                        respond(Fixtures.USERS_PAGE_1, HttpStatusCode.OK, paginationHeaders())
+                    }
+                }
+                install(ContentNegotiation) { json(gorestJson) }
+            },
+            baseUrl = "https://example.test/public/v2",
+        )
+
+        apiClient.getUsers(page = 1, perPage = 2, bearerToken = "test-token")
+
+        assertEquals("Bearer test-token", capturedAuthorization)
+    }
+
+    @Test
+    fun `omits bearer token when not provided for users page`() = runTest {
+        var capturedAuthorization: String? = null
+        val apiClient = GorestApiClient(
+            httpClient = HttpClient(MockEngine) {
+                expectSuccess = true
+                engine {
+                    addHandler { request ->
+                        capturedAuthorization = request.headers[HttpHeaders.Authorization]
+                        respond(Fixtures.USERS_PAGE_1, HttpStatusCode.OK, paginationHeaders())
+                    }
+                }
+                install(ContentNegotiation) { json(gorestJson) }
+            },
+            baseUrl = "https://example.test/public/v2",
+        )
+
+        apiClient.getUsers(page = 1, perPage = 2)
+
+        assertEquals(null, capturedAuthorization)
+    }
+
+    @Test
     fun `parses user detail`() = runTest {
         val apiClient = GorestApiClient(mockClient(Fixtures.USER_DETAIL), "https://example.test/public/v2")
 

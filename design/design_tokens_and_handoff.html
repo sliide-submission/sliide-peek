@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal — Design Tokens & Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f7f5;--surf:#ffffff;--ink:#14151a;--ink2:#5d5f66;--ink3:#9a9ca3;
+    --line:#e6e7ea;--line2:#eff0f2;--accent:#2d5bff;--accent-soft:#e9eeff;
+    --green:#17935a;--amber:#c07a12;--danger:#d24b4b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Space Grotesk',sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .wrap{max-width:1080px;margin:0 auto;padding:56px 40px 120px;}
+
+  header .kick{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);}
+  header h1{font-size:38px;font-weight:700;letter-spacing:-.025em;margin:8px 0 10px;}
+  header p{font-size:15px;line-height:1.6;color:var(--ink2);max-width:680px;margin:0;}
+  header .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  header .pill{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--ink2);background:var(--surf);border:1px solid var(--line);padding:6px 11px;border-radius:6px;}
+
+  section{margin-top:64px;}
+  .sh{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:24px;}
+  .sh .n{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--accent);}
+  .sh h2{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0;}
+  .sh .note{margin-left:auto;font-size:12.5px;color:var(--ink3);}
+
+  /* color table */
+  .ctable{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surf);}
+  .ctable .chead,.crow{display:grid;grid-template-columns:1.1fr 1fr 1fr 1.4fr;align-items:center;}
+  .ctable .chead{background:var(--line2);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);}
+  .ctable .chead>div{padding:11px 16px;}
+  .crow{border-top:1px solid var(--line);}
+  .crow>div{padding:13px 16px;display:flex;align-items:center;gap:11px;min-width:0;}
+  .tok{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:600;color:var(--ink);}
+  .sw{width:30px;height:30px;border-radius:7px;border:1px solid rgba(0,0,0,.12);flex:0 0 auto;}
+  .sw.ondark{border-color:rgba(255,255,255,.14);}
+  .hex{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink2);}
+  .darkcell{background:#0e0f13;border-radius:7px;}
+  .usg{font-size:12.5px;color:var(--ink2);line-height:1.4;}
+
+  /* type scale */
+  .tlist{display:flex;flex-direction:column;gap:2px;}
+  .trow{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line);}
+  .tmeta .tname{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;}
+  .tmeta .tspec{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink3);margin-top:5px;line-height:1.5;}
+  .tmeta .tuse{font-size:11.5px;color:var(--ink2);margin-top:6px;line-height:1.4;}
+  .tsample{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* spacing */
+  .scale{display:flex;flex-direction:column;gap:10px;}
+  .srow{display:flex;align-items:center;gap:16px;}
+  .sbar{height:18px;background:var(--accent);border-radius:3px;flex:0 0 auto;}
+  .sname{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;width:74px;flex:0 0 auto;}
+  .spx{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);width:48px;flex:0 0 auto;}
+  .suse{font-size:12px;color:var(--ink2);}
+
+  /* radii + borders cards */
+  .grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;}
+  .rcard{border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--surf);}
+  .rbox{height:54px;background:var(--accent-soft);border:1.5px solid var(--accent);margin-bottom:12px;}
+  .rname{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;}
+  .ruse{font-size:11.5px;color:var(--ink2);margin-top:4px;line-height:1.4;}
+
+  /* status chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:6px 11px;border-radius:5px;}
+  .chip .d{width:7px;height:7px;border-radius:2px;background:currentColor;}
+  .chip.act{color:var(--green);background:#e6f4ec;}
+  .chip.off{color:var(--ink3);background:var(--line2);}
+  .chip.pend{color:var(--amber);background:#f7eedd;}
+  .chip.done{color:var(--accent);background:var(--accent-soft);}
+  .chip.err{color:var(--danger);background:#fbecec;}
+  .smap{margin-top:16px;font-size:12.5px;color:var(--ink2);line-height:1.7;}
+  .smap code{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:var(--line2);padding:2px 6px;border-radius:4px;color:var(--ink);}
+
+  /* code block */
+  .code{position:relative;background:#0e0f13;border-radius:10px;padding:22px 24px;overflow:auto;border:1px solid #262932;}
+  .code pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#d3d5da;white-space:pre;}
+  .code .cm{color:#62656e;}
+  .code .kw{color:#5b82ff;}
+  .code .st{color:#34c77b;}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .tab{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;padding:7px 13px;border-radius:6px;border:1px solid var(--line);background:var(--surf);color:var(--ink2);cursor:pointer;}
+  .tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+  .cblock{display:none;}
+  .cblock.on{display:block;}
+  .hint{font-size:12.5px;color:var(--ink3);margin-top:12px;line-height:1.5;}
+
+  /* ---- v2: component cards ---- */
+  .cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;}
+  .cc{border:1px solid var(--line);border-radius:12px;background:var(--surf);padding:18px;display:flex;flex-direction:column;gap:14px;}
+  .cc .cc-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .cc .cc-t{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+  .cc .cc-m{font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:500;color:var(--accent);background:var(--accent-soft);padding:3px 7px;border-radius:5px;}
+  .cc .cc-demo{background:var(--bg);border:1px solid var(--line2);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;min-height:64px;justify-content:center;}
+  .cc .cc-spec{font-size:12px;color:var(--ink2);line-height:1.55;}
+  .cc .cc-spec b{color:var(--ink);font-weight:600;}
+  .cc .cc-spec code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--line2);padding:1px 5px;border-radius:4px;color:var(--ink);}
+
+  /* demo: fab */
+  .d-fab{width:56px;height:56px;border-radius:18px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:300;box-shadow:0 8px 20px rgba(45,91,255,.30);}
+  /* demo: field */
+  .d-field{width:100%;display:flex;flex-direction:column;gap:8px;}
+  .d-inp{height:46px;border:1.5px solid var(--line);border-radius:11px;background:var(--surf);display:flex;align-items:center;padding:0 13px;font-size:13px;color:var(--ink);gap:8px;}
+  .d-inp .gw{flex:1;}
+  .d-inp.ph{color:var(--ink3);}
+  .d-inp.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .d-inp.valid{border-color:var(--green);}
+  .d-inp.err{border-color:var(--danger);}
+  .d-inp .tk{font-weight:700;}
+  .d-inp .tk.ok{color:var(--green);}
+  .d-inp .tk.bad{color:var(--danger);}
+  .d-help{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--danger);}
+  /* demo: segmented */
+  .d-seg{display:flex;border:1.5px solid var(--line);border-radius:11px;overflow:hidden;width:100%;}
+  .d-seg span{flex:1;text-align:center;font-size:12px;font-weight:600;padding:10px 0;color:var(--ink2);background:var(--surf);border-right:1.5px solid var(--line);}
+  .d-seg span:last-child{border-right:none;}
+  .d-seg span.on{background:var(--accent-soft);color:var(--accent);}
+  /* demo: snackbar */
+  .d-snack{width:100%;background:var(--ink);color:#fff;border-radius:13px;padding:12px 8px 12px 16px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;}
+  .d-snack .st{font-size:13px;font-weight:500;flex:1;}
+  .d-snack .ac{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#7da0ff;padding:5px 11px;}
+  .d-snack .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--accent);}
+  .d-snack.err{background:var(--danger);}
+  .d-snack.err .ac{color:#fff;text-decoration:underline;}
+  /* demo: dialog */
+  .d-dialog{width:100%;border:1px solid var(--line);border-radius:16px;background:var(--surf);padding:16px;display:flex;flex-direction:column;gap:9px;}
+  .d-dialog .di-ic{width:40px;height:40px;border-radius:11px;background:#fbecec;color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .d-dialog .di-t{font-size:15px;font-weight:700;}
+  .d-dialog .di-b{font-size:12px;color:var(--ink2);line-height:1.5;}
+  .d-dialog .di-a{display:flex;justify-content:flex-end;gap:6px;margin-top:4px;}
+  .d-btn{height:34px;padding:0 16px;border-radius:9px;border:none;font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;}
+  .d-btn.txt{background:transparent;color:var(--accent);}
+  .d-btn.dgr{background:var(--danger);color:#fff;}
+  .d-btn.pri{background:var(--accent);color:#fff;}
+  /* demo: sheet */
+  .d-sheet{width:100%;border:1px solid var(--line);border-top-left-radius:16px;border-top-right-radius:16px;background:var(--surf);padding:8px 14px 14px;display:flex;flex-direction:column;gap:8px;}
+  .d-sheet .gb{width:32px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 4px;}
+  .d-sheet .sh-t{font-size:14px;font-weight:700;}
+  /* demo: banner */
+  .d-banner{width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;background:var(--line2);border:1px solid var(--line);font-size:11.5px;color:var(--ink2);}
+  .d-banner .od{width:8px;height:8px;border-radius:50%;background:var(--ink3);}
+  .d-banner .wn{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink3);}
+  /* demo: row */
+  .d-row{width:100%;display:flex;align-items:center;gap:11px;padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surf);}
+  .d-row .av{width:40px;height:40px;border-radius:11px;background:var(--bg);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;}
+  .d-row .mt{flex:1;}
+  .d-row .nm{font-size:13.5px;font-weight:600;}
+  .d-row .em{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2);margin-top:3px;}
+  .d-row .rt{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .d-row .ago{font-family:'JetBrains Mono',monospace;font-size:9.5px;color:var(--ink3);}
+
+  /* ---- v2: motion table ---- */
+  .mtable{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surf);}
+  .mtable .mhead,.mrow{display:grid;grid-template-columns:1.3fr 1.4fr 1.7fr .9fr 1.4fr;align-items:center;}
+  .mtable .mhead{background:var(--line2);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);}
+  .mtable .mhead>div{padding:11px 14px;}
+  .mrow{border-top:1px solid var(--line);}
+  .mrow>div{padding:12px 14px;font-size:12px;color:var(--ink2);line-height:1.45;}
+  .mrow .mname{font-weight:700;color:var(--ink);}
+  .mrow .mdur{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);font-weight:600;}
+  .mrow .mease{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink2);}
+  .easekey{margin-top:16px;font-size:12.5px;color:var(--ink2);line-height:1.8;}
+  .easekey code{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--line2);padding:2px 6px;border-radius:4px;color:var(--ink);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kick">// signal · design tokens + components · v2</div>
+    <h1>Handoff sheet</h1>
+    <p>Every value behind the <strong>User Management System</strong> "Signal" screens, consolidated for implementation. Colors are theme-paired (light / dark); type, spacing, radii and status semantics are named so they map cleanly onto a Compose <span class="mono" style="font-size:13px;">ColorScheme</span> / <span class="mono" style="font-size:13px;">Typography</span> / <span class="mono" style="font-size:13px;">Shapes</span>. <strong>v2</strong> adds the re-scoped components (FAB, snackbar, text fields, segmented control, dialog, bottom sheet, offline banner) each mapped to its Material 3 composable, plus a motion table. Pair this with the <span class="mono" style="font-size:13px;">Engineering Spec</span> sheet for logic, API contract &amp; copy.</p>
+    <div class="meta">
+      <span class="pill">Type · Space Grotesk + JetBrains Mono</span>
+      <span class="pill">Accent · #2D5BFF</span>
+      <span class="pill">Grid · 4px base</span>
+      <span class="pill">Themes · light + dark</span>
+      <span class="pill">Base · Material 3</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="sh"><span class="n">01</span><h2>Color tokens</h2><span class="note">light → dark pairs</span></div>
+    <div class="ctable" id="ctable">
+      <div class="chead"><div>Token</div><div>Light</div><div>Dark</div><div>Usage</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">02</span><h2>Type scale</h2><span class="note">Space Grotesk · JetBrains Mono for meta</span></div>
+    <div class="tlist" id="tlist"></div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">03</span><h2>Spacing</h2><span class="note">4px base grid</span></div>
+    <div class="scale" id="scale"></div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">04</span><h2>Radii &amp; borders</h2><span class="note">squared, technical</span></div>
+    <div class="grid3" id="radii"></div>
+    <div class="smap" style="margin-top:18px;">
+      Borders — <code>1px</code> hairline (<code>line</code>) for dividers &amp; card edges · <code>1.5px</code> for controls (checkbox) · <code>3px</code> left bar in <code>accent</code> for the selected row &amp; post cards. No drop shadows in light; dark uses surface elevation (<code>surface</code> over <code>bg</code>) instead.
+    </div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">05</span><h2>Status &amp; semantics</h2><span class="note">accessible in both themes</span></div>
+    <div class="chips">
+      <span class="chip act"><span class="d"></span>Active</span>
+      <span class="chip off">Inactive</span>
+      <span class="chip err"><span class="d"></span>Error</span>
+    </div>
+    <div class="smap">
+      <strong>Always pair colour with a label or icon</strong> — never colour alone. Mapping:
+      <br>· User status → <code>green</code> Active / <code>ink-3</code> Inactive
+      <br>· Validation success → <code>green</code> (field valid tick)
+      <br>· Errors, destructive (delete), failed submit → <code>danger</code>
+      <br>· Selection, links, primary action, FAB, valid-focus, snackbar action → <code>accent</code>
+      <br>· Offline / cached banner → neutral <code>line-2</code> fill, <code>ink-2</code> text (informational, not alarming)
+    </div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">06</span><h2>Components &amp; states</h2><span class="note">each mapped to its Material 3 composable</span></div>
+    <div class="cgrid">
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">User row</span><span class="cc-m">ListItem / Row</span></div>
+        <div class="cc-demo"><div class="d-row"><div class="av">PN</div><div class="mt"><div class="nm">Priya Nair</div><div class="em"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1363617a6a723d7d727a6153766b727e637f763d707c7e">[email&#160;protected]</a></div></div><div class="rt"><span class="chip act"><span class="d"></span>Active</span><span class="ago">5 min ago</span></div></div></div>
+        <div class="cc-spec">Avatar <code>radius-md</code> · name <code>body-strong</code> · email <code>label</code> mono · status chip + relative time. Whole row is the long-press target → delete. Min height <b>64dp</b>.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">FAB</span><span class="cc-m">FloatingActionButton</span></div>
+        <div class="cc-demo" style="align-items:center;"><div class="d-fab">+</div></div>
+        <div class="cc-spec"><b>56×56dp</b>, <code>radius-xl</code> (18dp), container <code>accent</code> / icon white. Elevation <b>6dp</b> (the one shadowed element in light). Bottom-right, 16dp inset. On tablet → <code>+</code> icon button in the app bar.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Text field · states</span><span class="cc-m">OutlinedTextField</span></div>
+        <div class="cc-demo">
+          <div class="d-field"><div class="d-inp ph"><span class="gw">Full name</span></div></div>
+          <div class="d-field"><div class="d-inp focus"><span class="gw">Maya Reed</span></div></div>
+          <div class="d-field"><div class="d-inp valid"><span class="gw"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="563b372f37782433333216332e373b263a337835393b">[email&#160;protected]</a></span><span class="tk ok">✓</span></div></div>
+          <div class="d-field"><div class="d-inp err"><span class="gw">maya.reed@</span><span class="tk bad">!</span></div><span class="d-help">Enter a valid email address</span></div>
+        </div>
+        <div class="cc-spec"><b>46dp</b> tall, <code>radius-md</code>. Default <code>line</code> → focus <code>accent</code> + 3dp soft ring → valid <code>green</code> ✓ → error <code>danger</code> + helper. Email field uses <code>label</code> mono.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Segmented selector</span><span class="cc-m">SingleChoiceSegmentedButtonRow</span></div>
+        <div class="cc-demo">
+          <div class="d-seg"><span class="on">Female</span><span>Male</span><span>Other</span></div>
+          <div class="d-seg"><span class="on">Active</span><span>Inactive</span></div>
+        </div>
+        <div class="cc-spec">Gender &amp; status. Selected segment <code>accent-soft</code> fill / <code>accent</code> text. Default pre-selected (Female / Active). No hidden pickers.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Snackbar · undo</span><span class="cc-m">Snackbar in SnackbarHost</span></div>
+        <div class="cc-demo"><div class="d-snack"><span class="st">Priya Nair deleted</span><span class="ac">Undo</span><span class="bar" style="width:58%"></span></div></div>
+        <div class="cc-spec">Inverse surface (<code>inv</code>) — dark in light theme, light in dark. Action text <code>accent</code>. Countdown bar runs the undo window; when it empties the delete commits to API.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Snackbar · delete failed</span><span class="cc-m">Snackbar (error)</span></div>
+        <div class="cc-demo"><div class="d-snack err"><span class="st">Couldn’t delete — restored</span><span class="ac">Retry</span></div></div>
+        <div class="cc-spec">If the API delete fails after commit, the row is re-inserted at its index and this <code>danger</code> snackbar offers <b>Retry</b>. No countdown.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Confirmation dialog</span><span class="cc-m">AlertDialog</span></div>
+        <div class="cc-demo"><div class="d-dialog"><div class="di-ic">🗑</div><div class="di-t">Delete Priya Nair?</div><div class="di-b">This removes them from your feed. You can undo right after.</div><div class="di-a"><button class="d-btn txt">Cancel</button><button class="d-btn dgr">Delete</button></div></div></div>
+        <div class="cc-spec"><code>radius-xl</code>, leading destructive icon. <b>Cancel</b> (text) left, <b>Delete</b> (<code>danger</code>) right. Guards the long-press destructive intent.</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Modal bottom sheet</span><span class="cc-m">ModalBottomSheet</span></div>
+        <div class="cc-demo" style="padding:0;overflow:hidden;"><div class="d-sheet"><div class="gb"></div><div class="sh-t">Add user</div><div class="d-inp ph" style="height:40px;"><span class="gw">Full name</span></div><div class="d-seg"><span class="on">Active</span><span>Inactive</span></div></div></div>
+        <div class="cc-spec">Top corners <code>radius-xl</code>, drag handle, scrim <b>46%</b>. Holds the Add form on phone. Dismiss by drag / scrim / ✕. On tablet the form is inline in the action panel (no sheet).</div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-h"><span class="cc-t">Offline / status banner</span><span class="cc-m">Surface + Row</span></div>
+        <div class="cc-demo"><div class="d-banner"><span class="od"></span>Offline — showing cached users<span class="wn">12 min ago</span></div></div>
+        <div class="cc-spec">Neutral <code>line-2</code> fill — informational, never alarming. Carries the last-updated time. Refreshing variant swaps to <code>accent-soft</code> + spinning icon.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">07</span><h2>Motion</h2><span class="note">Material 3 easing · target durations</span></div>
+    <div class="mtable">
+      <div class="mhead"><div>Moment</div><div>Trigger</div><div>Animates</div><div>Duration</div><div>Easing</div></div>
+      <div class="mrow"><div class="mname">Shimmer loop</div><div>While loading</div><div>Skeleton highlight sweep L→R</div><div class="mdur">1400ms</div><div class="mease">linear · loop</div></div>
+      <div class="mrow"><div class="mname">Shimmer → content</div><div>Data arrives</div><div>Cross-fade skeleton→rows, 30ms/row stagger</div><div class="mdur">200ms</div><div class="mease">Emphasized Decelerate</div></div>
+      <div class="mrow"><div class="mname">Sheet enter</div><div>FAB tap</div><div>translateY up + scrim fade-in</div><div class="mdur">280ms</div><div class="mease">Emphasized Decelerate</div></div>
+      <div class="mrow"><div class="mname">Sheet exit</div><div>Submit OK / dismiss</div><div>translateY down + scrim fade-out</div><div class="mdur">220ms</div><div class="mease">Emphasized Accelerate</div></div>
+      <div class="mrow"><div class="mname">New-row insert</div><div>Add success</div><div>Height expand + fade, then amber highlight decay</div><div class="mdur">240 + 1200ms</div><div class="mease">Emphasized Decelerate</div></div>
+      <div class="mrow"><div class="mname">Long-press</div><div>Hold ~450ms</div><div>Row scale→0.98 + ripple + 1 haptic tick</div><div class="mdur">450 / 300ms</div><div class="mease">Standard</div></div>
+      <div class="mrow"><div class="mname">Confirm dialog</div><div>Long-press threshold</div><div>Scale-up 0.92→1 + fade, scrim in</div><div class="mdur">260ms</div><div class="mease">Emphasized Decelerate</div></div>
+      <div class="mrow"><div class="mname">Delete removal</div><div>Confirm tap</div><div>Row height→0 + slide-left + fade; rows below reflow up</div><div class="mdur">240 / 200ms</div><div class="mease">Emphasized Accelerate</div></div>
+      <div class="mrow"><div class="mname">Undo restore</div><div>Undo tap</div><div>Reverse collapse at original index + highlight</div><div class="mdur">240 + 1000ms</div><div class="mease">Emphasized Decelerate</div></div>
+      <div class="mrow"><div class="mname">Refresh spin</div><div>Pull / tap refresh</div><div>App-bar icon rotate; rows stay (no wipe)</div><div class="mdur">900ms/turn</div><div class="mease">linear · loop</div></div>
+    </div>
+    <div class="easekey">
+      <strong>M3 easing curves</strong> (Compose <code>MotionTokens</code> / <code>CubicBezierEasing</code>):
+      <br>· Emphasized Decelerate → <code>cubic-bezier(0.05, 0.7, 0.1, 1.0)</code> — elements entering
+      <br>· Emphasized Accelerate → <code>cubic-bezier(0.3, 0.0, 0.8, 0.15)</code> — elements leaving
+      <br>· Standard → <code>cubic-bezier(0.2, 0.0, 0.0, 1.0)</code> — simple in-place changes
+      <br><span style="color:var(--ink3);">Respect <code>Reduce Motion</code>: collapse animated transitions to instant cross-fades; keep the highlight, drop the slide.</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="sh"><span class="n">08</span><h2>Compose Multiplatform</h2><span class="note">copy-paste starting point</span></div>
+    <div class="tabs">
+      <button class="tab on" data-t="color">Color.kt</button>
+      <button class="tab" data-t="type">Type.kt</button>
+      <button class="tab" data-t="shape">Shape.kt</button>
+      <button class="tab" data-t="motion">Motion.kt</button>
+    </div>
+    <div class="code">
+      <div class="cblock on" id="cb-color"></div>
+      <div class="cblock" id="cb-type"></div>
+      <div class="cblock" id="cb-shape"></div>
+      <div class="cblock" id="cb-motion"></div>
+    </div>
+    <div class="hint">These are direct token transcriptions — wire them into your theme however your project is structured (a custom <span class="mono">SignalTheme</span> with <span class="mono">CompositionLocal</span>s, or by mapping onto Material 3 <span class="mono">lightColorScheme()</span> / <span class="mono">darkColorScheme()</span>). The dark <span class="mono">accentSoft</span> / status-bg values carry alpha, so use <span class="mono">Color(0x..)</span> with the leading alpha byte as shown.</div>
+  </section>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const COLORS = [
+  ['bg',          '#f7f7f5', '#0e0f13', 'App background'],
+  ['surface',     '#ffffff', '#181a20', 'Cards, rows, inputs, app bar'],
+  ['ink',         '#14151a', '#f1f2f5', 'Primary text, headings'],
+  ['ink-2',       '#5d5f66', '#9a9ca4', 'Secondary text, nav, captions'],
+  ['ink-3',       '#9a9ca3', '#62656e', 'Muted / placeholder, section labels'],
+  ['btext',       '#2c2e34', '#d3d5da', 'Long-form body copy (post body)'],
+  ['line',        '#e6e7ea', '#262932', 'Hairline borders & dividers'],
+  ['line-2',      '#eff0f2', '#1d2027', 'Subtle fills (inactive chip bg)'],
+  ['accent',      '#2d5bff', '#5b82ff', 'Primary action, links, selection, post bar'],
+  ['accent-soft', '#e9eeff', 'rgba(91,130,255,0.16)', 'Accent tint — selected row, "done" chip'],
+  ['green',       '#17935a', '#34c77b', 'Active / completed status'],
+  ['green-bg',    '#e6f4ec', 'rgba(52,199,123,0.15)', 'Active chip background'],
+  ['amber',       '#c07a12', '#e0a33a', 'Pending status'],
+  ['amber-bg',    '#f7eedd', 'rgba(224,163,58,0.15)', 'Pending chip background'],
+  ['danger',      '#d24b4b', '#f0716e', 'Errors, destructive actions'],
+  ['skel',        '#e9eaed', '#23262f', 'Shimmer skeleton base'],
+  ['skel-hi',     '#f4f5f6', '#2c303a', 'Shimmer sweep highlight'],
+];
+const ct = document.getElementById('ctable');
+COLORS.forEach(([tok, l, d, use]) => {
+  const row = document.createElement('div');
+  row.className = 'crow';
+  row.innerHTML =
+    `<div><span class="tok">${tok}</span></div>`+
+    `<div><span class="sw" style="background:${l}"></span><span class="hex">${l}</span></div>`+
+    `<div class="darkcell"><span class="sw ondark" style="background:${d}"></span><span class="hex" style="color:#9a9ca4">${d}</span></div>`+
+    `<div><span class="usg">${use}</span></div>`;
+  ct.appendChild(row);
+});
+
+const TYPE = [
+  ['title',       "Space Grotesk · 23 / 700 · -0.02em", 'Screen titles ("Users")', 'Users', "font:700 23px 'Space Grotesk';letter-spacing:-.02em"],
+  ['heading',     "Space Grotesk · 19 / 700 · -0.02em", 'Names, post titles', 'Priya Nair', "font:700 19px 'Space Grotesk';letter-spacing:-.02em"],
+  ['body-strong', "Space Grotesk · 14 / 600", 'List row name, todo title', 'Aarav Sharma', "font:600 14px 'Space Grotesk'"],
+  ['body',        "Space Grotesk · 13 / 400 · 1.6lh", 'Post body, previews, comments', 'The ledger settles continuously now.', "font:400 13px 'Space Grotesk'"],
+  ['label',       "JetBrains Mono · 11 / 500", 'Emails, breadcrumb paths', 'priya.nair@example.com', "font:500 11px 'JetBrains Mono'"],
+  ['meta',        "JetBrains Mono · 10.5 / 600", 'Dates, counts, status text', 'due 2026-06-18', "font:600 10.5px 'JetBrains Mono'"],
+  ['eyebrow',     "JetBrains Mono · 10 / 600 · +0.1em · UPPER", 'Section labels, chips', '// DIRECTORY', "font:600 10px 'JetBrains Mono';letter-spacing:.1em;text-transform:uppercase"],
+];
+const tl = document.getElementById('tlist');
+TYPE.forEach(([name, spec, use, sample, css]) => {
+  const row = document.createElement('div');
+  row.className = 'trow';
+  row.innerHTML =
+    `<div class="tmeta"><div class="tname">${name}</div><div class="tspec">${spec}</div><div class="tuse">${use}</div></div>`+
+    `<div class="tsample" style="${css}">${sample}</div>`;
+  tl.appendChild(row);
+});
+
+const SPACE = [
+  ['space-1', 4,  'Icon ↔ label gaps, tight insets'],
+  ['space-2', 8,  'Chip padding, list-row gaps'],
+  ['space-3', 12, 'Card padding, row inset'],
+  ['space-4', 16, 'Screen gutters, section gaps'],
+  ['space-5', 20, 'Pane padding (iPad detail)'],
+  ['space-6', 24, 'Two-column gutter (iPad)'],
+];
+const sc = document.getElementById('scale');
+SPACE.forEach(([name, px, use]) => {
+  const row = document.createElement('div');
+  row.className = 'srow';
+  row.innerHTML = `<span class="sname">${name}</span><span class="sbar" style="width:${px*3}px"></span><span class="spx">${px}px</span><span class="suse">${use}</span>`;
+  sc.appendChild(row);
+});
+
+const RADII = [
+  ['radius-xs', 5,  'Chips, segmented control items'],
+  ['radius-sm', 6,  'Filter segments, small buttons'],
+  ['radius-md', 8,  'Cards, rows, avatars, buttons'],
+  ['radius-lg', 11, 'Large avatar, icon containers'],
+  ['radius-xl', 14, 'State-block icon, sheets'],
+];
+const rd = document.getElementById('radii');
+RADII.forEach(([name, px, use]) => {
+  const c = document.createElement('div');
+  c.className = 'rcard';
+  c.innerHTML = `<div class="rbox" style="border-radius:${px}px"></div><div class="rname">${name}</div><div class="ruse">${px}px · ${use}</div>`;
+  rd.appendChild(c);
+});
+
+// code blocks
+const CB = {
+  color:
+`<span class="cm">// Signal color tokens — Color.kt</span>
+<span class="kw">import</span> androidx.compose.ui.graphics.Color
+
+<span class="kw">object</span> SignalLight {
+    <span class="kw">val</span> bg          = Color(<span class="st">0xFFF7F7F5</span>)
+    <span class="kw">val</span> surface     = Color(<span class="st">0xFFFFFFFF</span>)
+    <span class="kw">val</span> ink         = Color(<span class="st">0xFF14151A</span>)
+    <span class="kw">val</span> ink2        = Color(<span class="st">0xFF5D5F66</span>)
+    <span class="kw">val</span> ink3        = Color(<span class="st">0xFF9A9CA3</span>)
+    <span class="kw">val</span> bodyText    = Color(<span class="st">0xFF2C2E34</span>)
+    <span class="kw">val</span> line        = Color(<span class="st">0xFFE6E7EA</span>)
+    <span class="kw">val</span> line2       = Color(<span class="st">0xFFEFF0F2</span>)
+    <span class="kw">val</span> accent      = Color(<span class="st">0xFF2D5BFF</span>)
+    <span class="kw">val</span> accentSoft  = Color(<span class="st">0xFFE9EEFF</span>)
+    <span class="kw">val</span> green       = Color(<span class="st">0xFF17935A</span>)
+    <span class="kw">val</span> greenBg     = Color(<span class="st">0xFFE6F4EC</span>)
+    <span class="kw">val</span> amber       = Color(<span class="st">0xFFC07A12</span>)
+    <span class="kw">val</span> amberBg     = Color(<span class="st">0xFFF7EEDD</span>)
+    <span class="kw">val</span> danger      = Color(<span class="st">0xFFD24B4B</span>)
+    <span class="kw">val</span> skel        = Color(<span class="st">0xFFE9EAED</span>)
+    <span class="kw">val</span> skelHi      = Color(<span class="st">0xFFF4F5F6</span>)
+}
+
+<span class="kw">object</span> SignalDark {
+    <span class="kw">val</span> bg          = Color(<span class="st">0xFF0E0F13</span>)
+    <span class="kw">val</span> surface     = Color(<span class="st">0xFF181A20</span>)
+    <span class="kw">val</span> ink         = Color(<span class="st">0xFFF1F2F5</span>)
+    <span class="kw">val</span> ink2        = Color(<span class="st">0xFF9A9CA4</span>)
+    <span class="kw">val</span> ink3        = Color(<span class="st">0xFF62656E</span>)
+    <span class="kw">val</span> bodyText    = Color(<span class="st">0xFFD3D5DA</span>)
+    <span class="kw">val</span> line        = Color(<span class="st">0xFF262932</span>)
+    <span class="kw">val</span> line2       = Color(<span class="st">0xFF1D2027</span>)
+    <span class="kw">val</span> accent      = Color(<span class="st">0xFF5B82FF</span>)
+    <span class="kw">val</span> accentSoft  = Color(<span class="st">0x295B82FF</span>) <span class="cm">// ~16% alpha</span>
+    <span class="kw">val</span> green       = Color(<span class="st">0xFF34C77B</span>)
+    <span class="kw">val</span> greenBg     = Color(<span class="st">0x2634C77B</span>)
+    <span class="kw">val</span> amber       = Color(<span class="st">0xFFE0A33A</span>)
+    <span class="kw">val</span> amberBg     = Color(<span class="st">0x26E0A33A</span>)
+    <span class="kw">val</span> danger      = Color(<span class="st">0xFFF0716E</span>)
+    <span class="kw">val</span> skel        = Color(<span class="st">0xFF23262F</span>)
+    <span class="kw">val</span> skelHi      = Color(<span class="st">0xFF2C303A</span>)
+}`,
+  type:
+`<span class="cm">// Signal type scale — Type.kt</span>
+<span class="kw">import</span> androidx.compose.ui.text.TextStyle
+<span class="kw">import</span> androidx.compose.ui.text.font.FontWeight
+<span class="kw">import</span> androidx.compose.ui.unit.sp
+
+<span class="cm">// fontFamily: spaceGrotesk (display/UI), jetBrainsMono (meta)</span>
+<span class="kw">object</span> SignalType {
+    <span class="kw">val</span> title       = TextStyle(spaceGrotesk, FontWeight.Bold,     <span class="st">23</span>.sp, letterSpacing = (-<span class="st">0.46</span>).sp)
+    <span class="kw">val</span> heading     = TextStyle(spaceGrotesk, FontWeight.Bold,     <span class="st">19</span>.sp, letterSpacing = (-<span class="st">0.38</span>).sp)
+    <span class="kw">val</span> bodyStrong  = TextStyle(spaceGrotesk, FontWeight.SemiBold, <span class="st">14</span>.sp)
+    <span class="kw">val</span> body        = TextStyle(spaceGrotesk, FontWeight.Normal,   <span class="st">13</span>.sp, lineHeight = <span class="st">21</span>.sp)
+    <span class="kw">val</span> label       = TextStyle(jetBrainsMono, FontWeight.Medium,  <span class="st">11</span>.sp)
+    <span class="kw">val</span> meta        = TextStyle(jetBrainsMono, FontWeight.SemiBold,<span class="st">10.5</span>.sp)
+    <span class="kw">val</span> eyebrow     = TextStyle(jetBrainsMono, FontWeight.SemiBold,<span class="st">10</span>.sp, letterSpacing = <span class="st">1.0</span>.sp)
+}`,
+  shape:
+`<span class="cm">// Spacing, radii &amp; borders — Shape.kt</span>
+<span class="kw">import</span> androidx.compose.ui.unit.dp
+
+<span class="kw">object</span> Space {
+    <span class="kw">val</span> s1 = <span class="st">4</span>.dp;  <span class="kw">val</span> s2 = <span class="st">8</span>.dp;  <span class="kw">val</span> s3 = <span class="st">12</span>.dp
+    <span class="kw">val</span> s4 = <span class="st">16</span>.dp; <span class="kw">val</span> s5 = <span class="st">20</span>.dp; <span class="kw">val</span> s6 = <span class="st">24</span>.dp
+}
+
+<span class="kw">object</span> Radius {
+    <span class="kw">val</span> xs = <span class="st">5</span>.dp   <span class="cm">// chips, segments</span>
+    <span class="kw">val</span> sm = <span class="st">6</span>.dp   <span class="cm">// filter segments, small buttons</span>
+    <span class="kw">val</span> md = <span class="st">8</span>.dp   <span class="cm">// cards, rows, avatars</span>
+    <span class="kw">val</span> lg = <span class="st">11</span>.dp  <span class="cm">// large avatar, icon containers</span>
+    <span class="kw">val</span> xl = <span class="st">14</span>.dp  <span class="cm">// state-block icon, sheets</span>
+}
+
+<span class="kw">object</span> Stroke {
+    <span class="kw">val</span> hairline = <span class="st">1</span>.dp   <span class="cm">// dividers, card edges (color = line)</span>
+    <span class="kw">val</span> control  = <span class="st">1.5</span>.dp <span class="cm">// checkbox</span>
+    <span class="kw">val</span> selected = <span class="st">3</span>.dp   <span class="cm">// left bar, color = accent</span>
+}`,
+  motion:
+`<span class="cm">// Motion tokens — Motion.kt</span>
+<span class="kw">import</span> androidx.compose.animation.core.*
+
+<span class="kw">object</span> SignalMotion {
+    <span class="cm">// Material 3 emphasized easing</span>
+    <span class="kw">val</span> emphDecel = CubicBezierEasing(<span class="st">0.05f</span>, <span class="st">0.7f</span>, <span class="st">0.1f</span>, <span class="st">1.0f</span>)
+    <span class="kw">val</span> emphAccel = CubicBezierEasing(<span class="st">0.3f</span>, <span class="st">0.0f</span>, <span class="st">0.8f</span>, <span class="st">0.15f</span>)
+    <span class="kw">val</span> standard  = CubicBezierEasing(<span class="st">0.2f</span>, <span class="st">0.0f</span>, <span class="st">0.0f</span>, <span class="st">1.0f</span>)
+
+    <span class="cm">// durations (ms)</span>
+    <span class="kw">const val</span> shimmer      = <span class="st">1400</span>
+    <span class="kw">const val</span> contentFade  = <span class="st">200</span>
+    <span class="kw">const val</span> sheetEnter   = <span class="st">280</span>
+    <span class="kw">const val</span> sheetExit    = <span class="st">220</span>
+    <span class="kw">const val</span> rowInsert    = <span class="st">240</span>
+    <span class="kw">const val</span> highlight    = <span class="st">1200</span>  <span class="cm">// amber decay on add/restore</span>
+    <span class="kw">const val</span> longPress    = <span class="st">450</span>   <span class="cm">// hold threshold</span>
+    <span class="kw">const val</span> dialogEnter  = <span class="st">260</span>
+    <span class="kw">const val</span> rowRemove    = <span class="st">240</span>
+    <span class="kw">const val</span> reflow       = <span class="st">200</span>
+    <span class="kw">const val</span> undoWindow   = <span class="st">5000</span>  <span class="cm">// snackbar / undo commit timer</span>
+}`,
+};
+document.getElementById('cb-color').innerHTML = '<pre>'+CB.color+'</pre>';
+document.getElementById('cb-type').innerHTML  = '<pre>'+CB.type+'</pre>';
+document.getElementById('cb-shape').innerHTML = '<pre>'+CB.shape+'</pre>';
+document.getElementById('cb-motion').innerHTML = '<pre>'+CB.motion+'</pre>';
+
+document.querySelectorAll('.tab').forEach((t) => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach((x) => x.classList.remove('on'));
+    document.querySelectorAll('.cblock').forEach((x) => x.classList.remove('on'));
+    t.classList.add('on');
+    document.getElementById('cb-' + t.dataset.t).classList.add('on');
+  });
+});
+</script>
+</body>
+</html>

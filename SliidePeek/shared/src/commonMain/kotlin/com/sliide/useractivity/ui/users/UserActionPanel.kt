@@ -3,18 +3,22 @@ package com.sliide.useractivity.ui.users
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.sliide.useractivity.domain.model.UserGender
 import com.sliide.useractivity.presentation.users.AddUserFormState
@@ -24,8 +28,11 @@ import com.sliide.useractivity.ui.components.ContentState
 import com.sliide.useractivity.ui.components.ContentStateContainer
 import com.sliide.useractivity.ui.components.InitialsAvatar
 import com.sliide.useractivity.ui.components.SectionHeader
+import com.sliide.useractivity.ui.components.SignalIcons
 import com.sliide.useractivity.ui.components.StatusChip
 import com.sliide.useractivity.ui.shell.appBodyPaddingValues
+import com.sliide.useractivity.ui.theme.signal
+import com.sliide.useractivity.ui.theme.signalType
 
 @Composable
 fun UserActionPanel(
@@ -54,6 +61,7 @@ fun UserActionPanel(
             expanded = true,
             modifier = modifier
                 .fillMaxSize()
+                .widthIn(max = 520.dp)
                 .padding(appBodyPaddingValues()),
         )
         return
@@ -64,7 +72,7 @@ fun UserActionPanel(
             modifier = modifier,
             state = ContentState.Empty,
             emptyTitle = "Select a user",
-            emptyBody = "Choose a user from the feed to manage them, or add someone new.",
+            emptyBody = "Pick someone from the list to see their details and manage them — or use + to add a new user.",
             emptyActionLabel = "Add user",
             onEmptyAction = onAddUserClick,
         ) {}
@@ -79,25 +87,24 @@ fun UserActionPanel(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(18.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            InitialsAvatar(initials = user.name.initials(), size = 54.dp)
+            InitialsAvatar(initials = userInitials(user.name), size = 66.dp, accent = true)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = user.name,
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
                     text = user.email,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.signalType.email,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     StatusChip(label = user.status.label, active = user.status == UserStatus.Active)
-                    StatusChip(label = user.gender.label)
+                    StatusChip(label = user.gender.label, neutral = true)
                 }
             }
         }
@@ -106,7 +113,10 @@ fun UserActionPanel(
         DetailGrid(user)
 
         SectionHeader(title = "Actions")
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             Button(
                 onClick = { onDeleteUserClick(user.id) },
                 colors = ButtonDefaults.buttonColors(
@@ -114,9 +124,13 @@ fun UserActionPanel(
                     contentColor = MaterialTheme.colorScheme.onError,
                 ),
             ) {
+                Icon(SignalIcons.Trash, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.size(8.dp))
                 Text("Delete user")
             }
             OutlinedButton(onClick = onAddUserClick) {
+                Icon(SignalIcons.Plus, contentDescription = null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.size(8.dp))
                 Text("Add user")
             }
         }
@@ -125,22 +139,25 @@ fun UserActionPanel(
 
 @Composable
 private fun DetailGrid(user: UserFeedItem) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        DetailRow("Last active", user.relativeTimestamp)
-        DetailRow("User ID", "#${user.id}")
-        DetailRow("Status", user.status.label)
-        DetailRow("Gender", user.gender.label)
+    Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.fillMaxWidth()) {
+            DetailItem("Last active", user.relativeTimestamp, Modifier.weight(1f))
+            DetailItem("User ID", "#${user.id}", Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), modifier = Modifier.fillMaxWidth()) {
+            DetailItem("Status", user.status.label, Modifier.weight(1f))
+            DetailItem("Gender", user.gender.label, Modifier.weight(1f))
+        }
     }
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+private fun DetailItem(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = label.uppercase(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold,
-            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.signal.ink3,
+            style = MaterialTheme.signalType.eyebrow,
         )
         Text(
             text = value,
@@ -163,10 +180,3 @@ private val UserGender.label: String
         UserGender.Female -> "Female"
         UserGender.Unknown -> "Unknown"
     }
-
-private fun String.initials(): String = trim()
-    .split(Regex("\\s+"))
-    .filter { it.isNotBlank() }
-    .take(2)
-    .joinToString("") { it.first().uppercase() }
-    .ifBlank { "?" }

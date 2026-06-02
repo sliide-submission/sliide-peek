@@ -8,7 +8,7 @@ class SqlDelightUserCacheDataSource(
 ) : UserCacheDataSource {
     private val queries = database.userCacheQueries
 
-    override suspend fun replaceLastPage(
+    override suspend fun replaceCachedFeed(
         page: Page<User>,
         fetchedAtMillis: Long,
         cachedAtMillis: Long,
@@ -37,7 +37,7 @@ class SqlDelightUserCacheDataSource(
         }
     }
 
-    override suspend fun getLastPageFeed(): CachedUserFeed? {
+    override suspend fun getCachedFeed(): CachedUserFeed? {
         val metadata = queries.selectMetadata(LAST_PAGE_CACHE_KEY).executeAsOneOrNull() ?: return null
         val rows = queries.selectCachedFeed().executeAsList()
         if (rows.isEmpty()) return null

@@ -28,33 +28,24 @@ class GetSmartUserFeedUseCase(
     private val perPage: Int = 20,
 ) : LoadUserFeedUseCase {
     override suspend fun invoke(): AppResult<UserFeedResult> {
-        val firstPageResult = userRepository.getUsers(page = 1, perPage = perPage)
-        val firstPage = when (firstPageResult) {
-            is AppResult.Success -> firstPageResult.value
-            is AppResult.Failure -> return firstPageResult.withCachedFallback()
-        }
-
-        val lastPage = firstPage.totalPages.coerceAtLeast(1)
-        val finalPage = if (lastPage == firstPage.page) {
-            firstPage
-        } else {
-            when (val lastPageResult = userRepository.getUsers(page = lastPage, perPage = perPage)) {
-                is AppResult.Success -> lastPageResult.value
-                is AppResult.Failure -> return lastPageResult.withCachedFallback()
-            }
+        // The newest users live on page 1 of GoREST (newest-first), so the "latest" feed is page 1.
+        val pageResult = userRepository.getUsers(page = 1, perPage = perPage)
+        val page = when (pageResult) {
+            is AppResult.Success -> pageResult.value
+            is AppResult.Failure -> return pageResult.withCachedFallback()
         }
 
         val fetchedAtMillis = clock.nowMillis()
         val cachedAtMillis = fetchedAtMillis
-        userCacheDataSource.replaceLastPage(
-            page = finalPage,
+        userCacheDataSource.replaceCachedFeed(
+            page = page,
             fetchedAtMillis = fetchedAtMillis,
             cachedAtMillis = cachedAtMillis,
         )
 
         return AppResult.Success(
             UserFeedResult(
-                users = finalPage.toFeedItems(fetchedAtMillis),
+                users = page.toFeedItems(fetchedAtMillis),
                 fromCache = false,
                 lastUpdatedMillis = cachedAtMillis,
             ),
@@ -63,7 +54,7 @@ class GetSmartUserFeedUseCase(
 
     private suspend fun AppResult.Failure.withCachedFallback(): AppResult<UserFeedResult> {
         if (!error.isOfflineError()) return this
-        val cachedFeed = userCacheDataSource.getLastPageFeed() ?: return this
+        val cachedFeed = userCacheDataSource.getCachedFeed() ?: return this
         return AppResult.Success(cachedFeed.toFeedResult())
     }
 

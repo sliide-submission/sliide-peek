@@ -87,15 +87,15 @@ Previous exploratory resources such as `/posts`, `/comments`, and `/todos` are n
 
 ## 4.1 Smart User Feed
 
-The app shall fetch and display users from the **last page** of the `/users` endpoint.
+The app shall fetch and display the **latest** users from the `/users` endpoint — i.e. the **first page (`page=1`)**.
 
 Endpoint:
 
 ```http
-GET /users
+GET /users?page=1
 ```
 
-The implementation should use GoREST pagination metadata to discover or request the last page.
+> **Spec correction:** the original brief said "last page". On GoREST `/users` is returned newest-first, so the last page holds the *oldest* records while page 1 holds the *newest*. For a feed that surfaces the latest users (and shows newly-created users immediately), the app fetches **page 1** rather than the last page. No pagination discovery is required.
 
 Each user row must display:
 
@@ -809,7 +809,7 @@ Goal: implement the official primary user feed experience.
 
 Likely scope:
 
-- fetch users from the last page of `/users`
+- fetch the latest users from the first page (`page=1`) of `/users`
 - display name, email, and shared-logic relative timestamp
 - ViewModel/state holder integration
 - shimmer loading

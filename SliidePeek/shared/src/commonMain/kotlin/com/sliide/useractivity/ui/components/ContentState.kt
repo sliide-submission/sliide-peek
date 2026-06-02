@@ -39,7 +39,10 @@ fun ContentStateContainer(
             modifier = modifier,
             title = emptyTitle,
             body = emptyBody,
+            icon = SignalIcons.Users,
+            tone = StateTone.Accent,
             actionLabel = emptyActionLabel,
+            actionIcon = if (emptyActionLabel != null) SignalIcons.Plus else null,
             onAction = onEmptyAction,
         )
 
@@ -47,10 +50,11 @@ fun ContentStateContainer(
             modifier = modifier,
             title = errorTitle,
             body = state.message ?: "Check your connection and try again. Nothing was lost.",
-            symbol = "⚠",
+            icon = SignalIcons.AlertTriangle,
+            tone = StateTone.Error,
             actionLabel = "Retry",
+            actionIcon = SignalIcons.Refresh,
             onAction = onRetry,
-            isError = true,
         )
 
         ContentState.Content -> content()

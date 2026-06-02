@@ -254,6 +254,60 @@ class UserFeedViewModelTest {
     }
 
     @Test
+    fun `confirming delete while offline shows message and leaves feed untouched`() = runTest {
+        val events = RecordedEvents()
+        val delete = FakeDeleteUserUseCase()
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(
+                results = mutableListOf(
+                    AppResult.Success(feedResult(listOf(feedUser(1)), fromCache = true)),
+                ),
+            ),
+            deleteUser = delete,
+        )
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.events.collect(events.events::add)
+        }
+        viewModel.load()
+        advanceUntilIdle()
+
+        viewModel.requestDeleteUser(1)
+        assertEquals(1L, viewModel.state.value.deleteConfirmation?.id)
+        viewModel.confirmDeleteUser()
+        advanceUntilIdle()
+
+        assertEquals(null, viewModel.state.value.deleteConfirmation)
+        assertEquals(listOf(1L), viewModel.state.value.users.map { it.id })
+        assertTrue(delete.deletedIds.isEmpty())
+        assertEquals(
+            listOf<UserFeedEvent>(UserFeedEvent.ShowMessage("You’re offline. Reconnect before deleting users.")),
+            events.events.toList(),
+        )
+    }
+
+    @Test
+    fun `clear highlight removes added user highlight`() = runTest {
+        val pending = CompletableDeferred<AppResult<UserFeedItem>>()
+        val viewModel = viewModel(
+            FakeLoadUserFeedUseCase(results = mutableListOf(AppResult.Success(feedResult(listOf(feedUser(1)))))),
+            createUser = FakeCreateUserUseCase(pending = pending),
+        )
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.openAddUser()
+        viewModel.onAddUserNameChanged("Maya Reed")
+        viewModel.onAddUserEmailChanged("maya.reed@example.com")
+        viewModel.submitAddUser()
+        runCurrent()
+        pending.complete(AppResult.Success(feedUser(99)))
+        advanceUntilIdle()
+
+        viewModel.clearHighlight()
+
+        assertEquals(null, viewModel.state.value.highlightedUserId)
+    }
+
+    @Test
     fun `requesting then cancelling delete leaves the feed untouched`() = runTest {
         val viewModel = loadedViewModel(listOf(1, 2, 3))
 

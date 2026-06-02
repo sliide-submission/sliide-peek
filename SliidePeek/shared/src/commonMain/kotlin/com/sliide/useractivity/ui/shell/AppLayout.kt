@@ -12,8 +12,8 @@ fun appLayoutClassForWidth(width: Dp): AppLayoutClass =
     if (width < CompactWidthThreshold) AppLayoutClass.Compact else AppLayoutClass.Expanded
 
 fun masterPaneWidthFor(width: Dp): Dp = when {
-    width < 840.dp -> 260.dp
-    else -> 320.dp
+    width < 840.dp -> 280.dp
+    else -> 340.dp
 }
 
 val CompactWidthThreshold = 700.dp

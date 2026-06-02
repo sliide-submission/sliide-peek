@@ -153,6 +153,11 @@ sqldelight {
     }
 }
 
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.sliide.useractivity.resources"
+}
+
 tasks.matching { it.name.startsWith("compile") || it.name.contains("Kotlin") }.configureEach {
     dependsOn(generateBuildSecrets)
 }

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Management System — Signal (Hi-Fi)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;height:100%;}
+  #root{height:100vh;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ums-screens.jsx"></script>
+
+<script type="text/babel">
+const W = 360, H = 760, PADW = 1024, PADH = 768, PORTW = 768, PORTH = 1024;
+
+function FeedSet({ dark }) {
+  const p = dark ? 'd' : 'l';
+  return (
+    <>
+      <DCArtboard id={p + '-loading'} label="Loading · shimmer" width={W} height={H}><FeedLoading dark={dark} /></DCArtboard>
+      <DCArtboard id={p + '-feed'} label="Populated" width={W} height={H}><Feed dark={dark} /></DCArtboard>
+      <DCArtboard id={p + '-empty'} label="Empty · first run" width={W} height={H}><FeedEmpty dark={dark} /></DCArtboard>
+      <DCArtboard id={p + '-error'} label="API error" width={W} height={H}><FeedError dark={dark} /></DCArtboard>
+      <DCArtboard id={p + '-nonet'} label="No internet · no cache" width={W} height={H}><FeedNoNet dark={dark} /></DCArtboard>
+      <DCArtboard id={p + '-offline'} label="Offline · cached" width={W} height={H}><FeedOffline dark={dark} /></DCArtboard>
+      <DCArtboard id={p + '-refresh'} label="Refreshing" width={W} height={H}><FeedRefreshing dark={dark} /></DCArtboard>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="feed-l" title="Smart User Feed · Light" subtitle="The home of the app — name · email · status chip · relative “last active”. Skeleton geometry matches real rows (no jump). FAB is the one persistent add action. Two distinct offline cases + a non-destructive refreshing state.">
+        {FeedSet({ dark: false })}
+      </DCSection>
+
+      <DCSection id="feed-d" title="Smart User Feed · Dark" subtitle="Same seven states on near-black surfaces. Status colours, shimmer and accent are re-tuned per the Signal dark tokens; the snackbar/sheet use inverse-surface elevation.">
+        {FeedSet({ dark: true })}
+      </DCSection>
+
+      <DCSection id="add" title="Add User · flow (Light)" subtitle="FAB → M3 modal bottom sheet over the feed. Real-time inline validation, locked submit-loading, optimistic success (new row slides in at top, count +1), and an error that preserves every field.">
+        <DCArtboard id="add-1" label="1 · Empty form" width={W} height={H}><AddEmpty dark={false} /></DCArtboard>
+        <DCArtboard id="add-2" label="2 · Validating" width={W} height={H}><AddValidating dark={false} /></DCArtboard>
+        <DCArtboard id="add-3" label="3 · Submitting" width={W} height={H}><AddSubmitting dark={false} /></DCArtboard>
+        <DCArtboard id="add-4" label="4 · Success" width={W} height={H}><AddSuccess dark={false} /></DCArtboard>
+        <DCArtboard id="add-5" label="5 · Submit error" width={W} height={H}><AddError dark={false} /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="add-dark" title="Add User · dark showcase" subtitle="The two pivotal moments in dark — the validating form and the optimistic success insert.">
+        <DCArtboard id="add-2d" label="Validating" width={W} height={H}><AddValidating dark={true} /></DCArtboard>
+        <DCArtboard id="add-4d" label="Success" width={W} height={H}><AddSuccess dark={true} /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="del" title="Delete with Undo · flow (Light)" subtitle="Long-press → confirmation dialog → optimistic removal with a countdown snackbar → Undo restores to the original index. Delete-failure re-inserts the row and offers Retry.">
+        <DCArtboard id="del-1" label="1 · Long-press" width={W} height={H}><DelPress dark={false} /></DCArtboard>
+        <DCArtboard id="del-2" label="2 · Confirm" width={W} height={H}><DelConfirm dark={false} /></DCArtboard>
+        <DCArtboard id="del-3" label="3 · Removing + Undo" width={W} height={H}><DelRemoving dark={false} /></DCArtboard>
+        <DCArtboard id="del-4" label="4 · Restored" width={W} height={H}><DelRestored dark={false} /></DCArtboard>
+        <DCArtboard id="del-5" label="Delete failed" width={W} height={H}><DelFailed dark={false} /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="del-dark" title="Delete with Undo · dark showcase" subtitle="Confirmation dialog and the Undo snackbar on the dark surface.">
+        <DCArtboard id="del-2dk" label="Confirm" width={W} height={H}><DelConfirm dark={true} /></DCArtboard>
+        <DCArtboard id="del-3dk" label="Removing + Undo" width={W} height={H}><DelRemoving dark={true} /></DCArtboard>
+      </DCSection>
+
+      <DCSection id="ipad" title="iPad · Feed | Action Panel" subtitle="Not a stretched phone. Persistent feed on the left; the right pane is one adaptive action panel — empty prompt → selected user (with Delete) → inline Add form. Selecting updates the pane in place; the selected row is highlighted.">
+        <DCArtboard id="pad-sel" label="Selected user · Light" width={PADW} height={PADH}><PadSelected dark={false} /></DCArtboard>
+        <DCArtboard id="pad-sel-d" label="Selected user · Dark" width={PADW} height={PADH}><PadSelected dark={true} /></DCArtboard>
+        <DCArtboard id="pad-add" label="Add form in panel · Light" width={PADW} height={PADH}><PadAdd dark={false} /></DCArtboard>
+        <DCArtboard id="pad-empty" label="Nothing selected · Dark" width={PADW} height={PADH}><PadEmpty dark={true} /></DCArtboard>
+        <DCArtboard id="pad-port" label="Portrait · Light" width={PORTW} height={PORTH}><PadPortrait dark={false} /></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
